@@ -1,3 +1,6 @@
 rootProject.name = "luminara-core"
 
-include("core-libs")
+include(
+    "core-libs",
+    "services:account-service"
+    )
