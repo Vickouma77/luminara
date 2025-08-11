@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "services/account-serice",
+    "shared"
+]
+resolver = "2"
