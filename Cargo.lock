@@ -3,9 +3,9 @@
 version = 4
 
 [[package]]
-name = "account-service"
+name = "shared"
 version = "0.1.0"
 
 [[package]]
-name = "shared"
+name = "user-services"
 version = "0.1.0"

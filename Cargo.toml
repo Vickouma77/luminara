@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "services/account-serice",
+    "services/user-service",
     "shared"
 ]
 resolver = "2"
