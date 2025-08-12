@@ -4,3 +4,13 @@ members = [
     "shared"
 ]
 resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+authors = ["Vickprestone20@gmail.com"]
+
+[workspace.dependencies]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
