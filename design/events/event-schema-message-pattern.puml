@@ -1,87 +1,99 @@
-@startuml
+@startuml Event Message Flow Pattern
 !theme plain
 skinparam backgroundColor #FEFEFE
 
-title Event Schema and Message Patterns
+participant "User Service" as US
+participant "Event Bus" as EB
+participant "Notification Handler" as NH
+participant "Audit Handler" as AH
+participant "Fraud Handler" as FH
+participant "KYC Service" as KYC
+participant "Account Service" as AS
 
-package "User Events" {
-    class UserRegistrationInitiated {
-        +eventId : UUID
-        +timestamp : DateTime
-        +userId : UUID
-        +email : String
-        +phoneNumber : String
-        +registrationChannel : String
-        +ipAddress : String
-    }
+title Event Message Flow and Handler Patterns
 
-    class UserStatusUpdated {
-        +eventId : UUID
-        +timestamp : DateTime
-        +userId : UUID
-        +previousStatus : UserStatus
-        +newStatus : UserStatus
-        +reason : String
-        +updatedBy : String
-    }
-
-    class KYCApproved {
-        +eventId : UUID
-        +timestamp : DateTime
-        +userId : UUID
-        +kycLevel : String
-        +verificationMethod : String
-        +approvedBy : String
-        +expiryDate : DateTime
-    }
-
-    class AccountCreated {
-        +eventId : UUID
-        +timestamp : DateTime
-        +userId : UUID
-        +accountId : UUID
-        +accountType : String
-        +accountNumber : String
-        +initialBalance : Decimal
-    }
-
-    class LoginSuccessful {
-        +eventId : UUID
-        +timestamp : DateTime
-        +userId : UUID
-        +sessionId : UUID
-        +ipAddress : String
-        +userAgent : String
-        +loginMethod : String
-    }
+== User Registration Event Pattern ==
+US -> EB: Publish UserRegistrationInitiated Event
+note right of EB
+{
+  "eventId": "uuid-123",
+  "timestamp": "2025-08-21T10:00:00Z",
+  "userId": "user-456",
+  "email": "user@example.com",
+  "phoneNumber": "+1234567890",
+  "registrationChannel": "web",
+  "ipAddress": "192.168.1.1"
 }
+end note
 
-package "Event Handlers" {
-    class NotificationHandler {
-        +handleUserRegistration()
-        +handleKYCUpdate()
-        +handleAccountCreation()
-        +handleLoginEvent()
-    }
+EB -> NH: Route event to Notification Handler
+activate NH
+NH -> NH: handleUserRegistration()
+NH -> NH: Send welcome email/SMS
+NH --> EB: UserNotificationSent Event
+deactivate NH
 
-    class AuditHandler {
-        +logUserActivity()
-        +trackStatusChanges()
-        +recordSecurityEvents()
-    }
+EB -> AH: Route event to Audit Handler
+activate AH
+AH -> AH: logUserActivity()
+AH -> AH: Create audit trail
+AH --> EB: AuditLogCreated Event
+deactivate AH
 
-    class FraudHandler {
-        +analyzeLoginPattern()
-        +checkSuspiciousActivity()
-        +triggerRiskAssessment()
-    }
+== KYC Approval Event Pattern ==
+KYC -> EB: Publish KYCApproved Event
+note right of EB
+{
+  "eventId": "uuid-789",
+  "timestamp": "2025-08-21T11:00:00Z",
+  "userId": "user-456",
+  "kycLevel": "TIER_2",
+  "verificationMethod": "DOCUMENT_VERIFICATION",
+  "approvedBy": "system",
+  "expiryDate": "2026-08-21T00:00:00Z"
 }
+end note
 
-UserRegistrationInitiated --> NotificationHandler
-UserRegistrationInitiated --> AuditHandler
-KYCApproved --> NotificationHandler
-AccountCreated --> NotificationHandler
-LoginSuccessful --> FraudHandler
-LoginSuccessful --> AuditHandler
+EB -> NH: Route event to Notification Handler
+activate NH
+NH -> NH: handleKYCUpdate()
+NH -> NH: Send KYC approval notification
+NH --> EB: KYCApprovalNotified Event
+deactivate NH
+
+EB -> AS: Trigger Account Creation
+AS --> EB: AccountCreationRequested Event
+
+== Login Success Event Pattern ==
+US -> EB: Publish LoginSuccessful Event
+note right of EB
+{
+  "eventId": "uuid-101",
+  "timestamp": "2025-08-21T12:00:00Z",
+  "userId": "user-456",
+  "sessionId": "session-789",
+  "ipAddress": "192.168.1.1",
+  "userAgent": "Mozilla/5.0...",
+  "loginMethod": "PASSWORD"
+}
+end note
+
+EB -> FH: Route event to Fraud Handler
+activate FH
+FH -> FH: analyzeLoginPattern()
+FH -> FH: checkSuspiciousActivity()
+alt Suspicious activity detected
+    FH -> FH: triggerRiskAssessment()
+    FH --> EB: SuspiciousActivityDetected Event
+else Normal activity
+    FH --> EB: LoginAnalyzed Event
+end
+deactivate FH
+
+EB -> AH: Route event to Audit Handler
+activate AH
+AH -> AH: recordSecurityEvents()
+AH --> EB: SecurityEventLogged Event
+deactivate AH
 
 @enduml
