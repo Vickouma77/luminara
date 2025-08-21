@@ -1,7 +1,6 @@
 @startuml KYC and Document Verification Flow
 !theme plain
 skinparam backgroundColor #FEFEFE
-skinparam sequenceParticipant underline
 
 actor "User" as U
 participant "User Service" as US
