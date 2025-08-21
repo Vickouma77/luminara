@@ -1,0 +1,86 @@
+@startuml Authentication and Authorization Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceParticipant underline
+
+actor "User" as U
+participant "API Gateway" as AG
+participant "Auth Service" as AUTH
+participant "User Service" as US
+participant "Event Bus" as EB
+participant "Notification Service" as NS
+participant "Fraud Detection" as FD
+database "User DB" as UDB
+database "Session Store" as SS
+
+title Authentication and Authorization Flow
+
+U -> AG: POST /auth/login (credentials)
+activate AG
+AG -> AUTH: Authenticate user
+activate AUTH
+
+AUTH -> US: Validate credentials
+activate US
+US -> UDB: Query user by email/username
+UDB --> US: User data (hashed password, status, etc.)
+
+US -> US: Verify password hash
+alt Invalid credentials
+    US -> EB: Publish LoginFailed Event
+    activate EB
+    EB -> FD: Check for suspicious activity
+    activate FD
+    FD --> EB: FraudCheck Event
+    deactivate FD
+    EB -> NS: Send security alert (if needed)
+    activate NS
+    NS --> EB: SecurityAlertSent Event
+    deactivate NS
+    deactivate EB
+
+    US --> AUTH: Authentication failed
+    AUTH --> AG: 401 Unauthorized
+    AG --> U: Invalid credentials
+
+else Valid credentials and account active
+    US -> EB: Publish LoginSuccessful Event
+    activate EB
+    US --> AUTH: User authenticated
+
+    AUTH -> AUTH: Generate JWT tokens
+    AUTH -> SS: Store refresh token
+
+    EB -> FD: Log successful login
+    activate FD
+    FD --> EB: LoginAnalyzed Event
+    deactivate FD
+
+    EB -> NS: Send login notification (if enabled)
+    activate NS
+    NS --> EB: LoginNotified Event
+    deactivate NS
+    deactivate EB
+
+    AUTH --> AG: Tokens + User info
+    AG --> U: Login successful
+
+else Account locked/suspended
+    US -> EB: Publish LoginAttemptBlocked Event
+    activate EB
+    EB -> NS: Send account status notification
+    activate NS
+    NS --> EB: AccountStatusNotified Event
+    deactivate NS
+    deactivate EB
+
+    US --> AUTH: Account locked
+    AUTH --> AG: 403 Forbidden
+    AG --> U: Account locked/suspended
+end
+
+deactivate US
+deactivate AUTH
+deactivate AG
+
+@enduml

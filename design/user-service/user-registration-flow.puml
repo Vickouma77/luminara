@@ -1,0 +1,67 @@
+@startuml User Registration Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceParticipant underline
+
+actor "User" as U
+participant "API Gateway" as AG
+participant "User Service" as US
+participant "Event Bus" as EB
+participant "KYC Service" as KYC
+participant "Document Service" as DS
+participant "Notification Service" as NS
+participant "Audit Service" as AS
+database "User DB" as UDB
+database "Event Store" as ES
+
+title User Registration Flow - Event Driven Architecture
+
+U -> AG: POST /api/users/register
+activate AG
+AG -> US: Register User Request
+activate US
+
+US -> UDB: Check if email/phone exists
+UDB --> US: Validation result
+
+alt User already exists
+    US -> EB: Publish UserRegistrationFailed Event
+    EB -> AS: Log failed registration attempt
+    US --> AG: 409 Conflict
+    AG --> U: User already exists
+else User doesn't exist
+    US -> UDB: Create preliminary user record
+    UDB --> US: User created with status PENDING
+
+    US -> EB: Publish UserRegistrationInitiated Event
+    activate EB
+
+    EB -> ES: Store event
+    EB -> NS: Send welcome email/SMS
+    activate NS
+    EB -> AS: Log registration attempt
+    activate AS
+    EB -> KYC: Initiate KYC process
+    activate KYC
+
+    US --> AG: 201 Created (Registration initiated)
+    deactivate US
+    AG --> U: Registration successful, KYC required
+    deactivate AG
+
+    NS -> NS: Generate welcome message
+    NS --> EB: UserNotificationSent Event
+    deactivate NS
+
+    AS -> AS: Log audit trail
+    AS --> EB: AuditLogCreated Event
+    deactivate AS
+
+    KYC -> US: Request user details for KYC
+    US --> KYC: User profile data
+    KYC --> EB: KYCProcessStarted Event
+    deactivate KYC
+    deactivate EB
+end
+
+@enduml

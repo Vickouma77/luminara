@@ -1,0 +1,93 @@
+@startuml KYC and Document Verification Flow
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceParticipant underline
+
+actor "User" as U
+participant "User Service" as US
+participant "KYC Service" as KYC
+participant "Document Service" as DS
+participant "Event Bus" as EB
+participant "Notification Service" as NS
+participant "Compliance Service" as CS
+database "User DB" as UDB
+database "Document DB" as DDB
+
+title KYC and Document Verification Flow
+
+U -> US: Submit KYC documents
+activate US
+US -> DS: Store documents
+activate DS
+DS -> DDB: Save document metadata
+DS --> US: Document reference
+deactivate DS
+
+US -> EB: Publish DocumentsSubmitted Event
+activate EB
+EB -> KYC: Process KYC documents
+activate KYC
+EB -> NS: Notify user of submission
+activate NS
+
+NS -> NS: Send confirmation message
+NS --> EB: DocumentSubmissionConfirmed Event
+deactivate NS
+
+KYC -> DS: Retrieve documents for verification
+activate DS
+DS --> KYC: Document data
+deactivate DS
+
+KYC -> KYC: Perform identity verification
+KYC -> KYC: Check against watchlists
+KYC -> CS: Compliance screening
+activate CS
+CS --> KYC: Compliance result
+deactivate CS
+
+alt KYC Approved
+    KYC -> EB: Publish KYCApproved Event
+    EB -> US: Update user status
+    activate US
+    US -> UDB: Set status to KYC_APPROVED
+    US --> EB: UserStatusUpdated Event
+    deactivate US
+
+    EB -> NS: Send approval notification
+    activate NS
+    NS --> EB: KYCApprovalNotified Event
+    deactivate NS
+
+else KYC Rejected
+    KYC -> EB: Publish KYCRejected Event
+    EB -> US: Update user status
+    activate US
+    US -> UDB: Set status to KYC_REJECTED
+    US --> EB: UserStatusUpdated Event
+    deactivate US
+
+    EB -> NS: Send rejection notification
+    activate NS
+    NS --> EB: KYCRejectionNotified Event
+    deactivate NS
+
+else KYC Requires Additional Info
+    KYC -> EB: Publish KYCAdditionalInfoRequired Event
+    EB -> US: Update user status
+    activate US
+    US -> UDB: Set status to KYC_PENDING_INFO
+    US --> EB: UserStatusUpdated Event
+    deactivate US
+
+    EB -> NS: Request additional documents
+    activate NS
+    NS --> EB: AdditionalInfoRequested Event
+    deactivate NS
+end
+
+deactivate KYC
+deactivate EB
+deactivate US
+
+@enduml

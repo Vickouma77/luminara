@@ -1,0 +1,61 @@
+@startuml Token Refresh and Session Management
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam sequenceParticipant underline
+
+actor "Client App" as C
+participant "API Gateway" as AG
+participant "Auth Service" as AUTH
+participant "Event Bus" as EB
+database "Session Store" as SS
+participant "Notification Service" as NS
+
+title Token Refresh and Session Management
+
+C -> AG: Request with expired access token
+activate AG
+AG -> AG: Validate token
+AG --> C: 401 Token expired
+deactivate AG
+
+C -> AG: POST /auth/refresh (refresh token)
+activate AG
+AG -> AUTH: Refresh tokens
+activate AUTH
+
+AUTH -> SS: Validate refresh token
+SS --> AUTH: Token validation result
+
+alt Valid refresh token
+    AUTH -> SS: Rotate refresh token
+    AUTH -> AUTH: Generate new access token
+    AUTH -> EB: Publish TokenRefreshed Event
+    activate EB
+
+    EB -> NS: Log token refresh (security monitoring)
+    activate NS
+    NS --> EB: TokenRefreshLogged Event
+    deactivate NS
+    deactivate EB
+
+    AUTH --> AG: New tokens
+    AG --> C: New access + refresh tokens
+
+else Invalid/expired refresh token
+    AUTH -> EB: Publish TokenRefreshFailed Event
+    activate EB
+
+    EB -> NS: Security alert for suspicious activity
+    activate NS
+    NS --> EB: SecurityAlertSent Event
+    deactivate NS
+    deactivate EB
+
+    AUTH --> AG: 401 Re-authentication required
+    AG --> C: Please login again
+end
+
+deactivate AUTH
+deactivate AG
+
+@enduml

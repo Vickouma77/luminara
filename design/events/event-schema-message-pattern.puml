@@ -1,0 +1,87 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Event Schema and Message Patterns
+
+package "User Events" {
+    class UserRegistrationInitiated {
+        +eventId : UUID
+        +timestamp : DateTime
+        +userId : UUID
+        +email : String
+        +phoneNumber : String
+        +registrationChannel : String
+        +ipAddress : String
+    }
+
+    class UserStatusUpdated {
+        +eventId : UUID
+        +timestamp : DateTime
+        +userId : UUID
+        +previousStatus : UserStatus
+        +newStatus : UserStatus
+        +reason : String
+        +updatedBy : String
+    }
+
+    class KYCApproved {
+        +eventId : UUID
+        +timestamp : DateTime
+        +userId : UUID
+        +kycLevel : String
+        +verificationMethod : String
+        +approvedBy : String
+        +expiryDate : DateTime
+    }
+
+    class AccountCreated {
+        +eventId : UUID
+        +timestamp : DateTime
+        +userId : UUID
+        +accountId : UUID
+        +accountType : String
+        +accountNumber : String
+        +initialBalance : Decimal
+    }
+
+    class LoginSuccessful {
+        +eventId : UUID
+        +timestamp : DateTime
+        +userId : UUID
+        +sessionId : UUID
+        +ipAddress : String
+        +userAgent : String
+        +loginMethod : String
+    }
+}
+
+package "Event Handlers" {
+    class NotificationHandler {
+        +handleUserRegistration()
+        +handleKYCUpdate()
+        +handleAccountCreation()
+        +handleLoginEvent()
+    }
+
+    class AuditHandler {
+        +logUserActivity()
+        +trackStatusChanges()
+        +recordSecurityEvents()
+    }
+
+    class FraudHandler {
+        +analyzeLoginPattern()
+        +checkSuspiciousActivity()
+        +triggerRiskAssessment()
+    }
+}
+
+UserRegistrationInitiated --> NotificationHandler
+UserRegistrationInitiated --> AuditHandler
+KYCApproved --> NotificationHandler
+AccountCreated --> NotificationHandler
+LoginSuccessful --> FraudHandler
+LoginSuccessful --> AuditHandler
+
+@enduml
