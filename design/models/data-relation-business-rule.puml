@@ -1,0 +1,395 @@
+@startuml User Service Database Model
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam classAttributeIconSize 0
+
+title User Service Database Model
+
+package "User Management Schema" {
+    entity "users" as users {
+        * user_id : UUID <<PK>>
+        --
+        * email : VARCHAR(255) <<UK>>
+        * phone_number : VARCHAR(20) <<UK>>
+        * password_hash : VARCHAR(255)
+        * first_name : VARCHAR(100)
+        * last_name : VARCHAR(100)
+        * date_of_birth : DATE
+        * status : ENUM(PENDING, KYC_PENDING, KYC_APPROVED, KYC_REJECTED, ACTIVE, SUSPENDED, CLOSED)
+        * registration_channel : ENUM(WEB, MOBILE, BRANCH, CALL_CENTER)
+        * created_at : TIMESTAMP
+        * updated_at : TIMESTAMP
+        * last_login_at : TIMESTAMP
+        ip_address : INET
+        kyc_level : ENUM(BASIC, TIER_1, TIER_2, TIER_3)
+        kyc_approved_at : TIMESTAMP
+        kyc_expires_at : TIMESTAMP
+        failed_login_attempts : INTEGER DEFAULT 0
+        account_locked_until : TIMESTAMP
+        email_verified : BOOLEAN DEFAULT FALSE
+        phone_verified : BOOLEAN DEFAULT FALSE
+        two_factor_enabled : BOOLEAN DEFAULT FALSE
+        preferred_language : VARCHAR(10) DEFAULT 'en'
+        timezone : VARCHAR(50)
+    }
+
+    entity "user_profiles" as user_profiles {
+        * profile_id : UUID <<PK>>
+        * user_id : UUID <<FK>>
+        --
+        address_line_1 : VARCHAR(255)
+        address_line_2 : VARCHAR(255)
+        city : VARCHAR(100)
+        state_province : VARCHAR(100)
+        postal_code : VARCHAR(20)
+        country : VARCHAR(3)
+        occupation : VARCHAR(100)
+        employer : VARCHAR(255)
+        annual_income : DECIMAL(15,2)
+        source_of_funds : VARCHAR(255)
+        profile_picture_url : VARCHAR(500)
+        * created_at : TIMESTAMP
+        * updated_at : TIMESTAMP
+    }
+
+    entity "user_sessions" as user_sessions {
+        * session_id : UUID <<PK>>
+        * user_id : UUID <<FK>>
+        --
+        * access_token_hash : VARCHAR(255)
+        * refresh_token_hash : VARCHAR(255)
+        * expires_at : TIMESTAMP
+        * created_at : TIMESTAMP
+        ip_address : INET
+        user_agent : TEXT
+        device_fingerprint : VARCHAR(255)
+        is_active : BOOLEAN DEFAULT TRUE
+        logged_out_at : TIMESTAMP
+    }
+
+    entity "user_accounts" as user_accounts {
+        * user_account_id : UUID <<PK>>
+        * user_id : UUID <<FK>>
+        * account_id : UUID <<FK>>
+        --
+        * account_type : ENUM(CHECKING, SAVINGS, CREDIT, LOAN)
+        * relationship : ENUM(PRIMARY, JOINT, BENEFICIARY, AUTHORIZED_USER)
+        * status : ENUM(ACTIVE, SUSPENDED, CLOSED)
+        * created_at : TIMESTAMP
+        * updated_at : TIMESTAMP
+    }
+}
+
+package "KYC Schema" {
+    entity "kyc_applications" as kyc_applications {
+        * kyc_id : UUID <<PK>>
+        * user_id : UUID <<FK>>
+        --
+        * application_status : ENUM(INITIATED, IN_PROGRESS, APPROVED, REJECTED, EXPIRED)
+        * kyc_level : ENUM(BASIC, TIER_1, TIER_2, TIER_3)
+        * verification_method : ENUM(DOCUMENT_VERIFICATION, VIDEO_CALL, IN_PERSON, BIOMETRIC)
+        * risk_score : INTEGER
+        * approval_reason : TEXT
+        * rejection_reason : TEXT
+        * approved_by : VARCHAR(100)
+        * reviewed_by : VARCHAR(100)
+        * submitted_at : TIMESTAMP
+        * reviewed_at : TIMESTAMP
+        * expires_at : TIMESTAMP
+        * created_at : TIMESTAMP
+        * updated_at : TIMESTAMP
+    }
+
+    entity "kyc_documents" as kyc_documents {
+        * document_id : UUID <<PK>>
+        * kyc_id : UUID <<FK>>
+        --
+        * document_type : ENUM(PASSPORT, DRIVERS_LICENSE, NATIONAL_ID, UTILITY_BILL, BANK_STATEMENT, SELFIE)
+        * file_path : VARCHAR(500)
+        * file_hash : VARCHAR(255)
+        * file_size : BIGINT
+        * mime_type : VARCHAR(100)
+        * verification_status : ENUM(PENDING, VERIFIED, REJECTED)
+        * verification_score : DECIMAL(5,2)
+        * extracted_data : JSONB
+        * uploaded_at : TIMESTAMP
+        * verified_at : TIMESTAMP
+    }
+
+    entity "compliance_checks" as compliance_checks {
+        * check_id : UUID <<PK>>
+        * kyc_id : UUID <<FK>>
+        --
+        * check_type : ENUM(SANCTIONS, PEP, ADVERSE_MEDIA, IDENTITY)
+        * provider : VARCHAR(100)
+        * status : ENUM(PASS, FAIL, MANUAL_REVIEW, ERROR)
+        * score : DECIMAL(5,2)
+        * response_data : JSONB
+        * performed_at : TIMESTAMP
+    }
+}
+
+package "Event Store Schema" {
+    entity "event_store" as event_store {
+        * event_id : UUID <<PK>>
+        --
+        * aggregate_id : UUID
+        * aggregate_type : VARCHAR(100)
+        * event_type : VARCHAR(100)
+        * event_version : INTEGER
+        * event_data : JSONB
+        * metadata : JSONB
+        * created_at : TIMESTAMP
+        * sequence_number : BIGSERIAL <<UK>>
+    }
+
+    entity "event_snapshots" as event_snapshots {
+        * snapshot_id : UUID <<PK>>
+        --
+        * aggregate_id : UUID <<UK>>
+        * aggregate_type : VARCHAR(100)
+        * version : INTEGER
+        * data : JSONB
+        * created_at : TIMESTAMP
+    }
+}
+
+package "Audit Schema" {
+    entity "audit_logs" as audit_logs {
+        * audit_id : UUID <<PK>>
+        --
+        * user_id : UUID
+        * action : VARCHAR(100)
+        * resource_type : VARCHAR(100)
+        * resource_id : UUID
+        * old_values : JSONB
+        * new_values : JSONB
+        * ip_address : INET
+        * user_agent : TEXT
+        * session_id : UUID
+        * correlation_id : UUID
+        * created_at : TIMESTAMP
+    }
+
+    entity "security_events" as security_events {
+        * event_id : UUID <<PK>>
+        --
+        * user_id : UUID
+        * event_type : ENUM(LOGIN_SUCCESS, LOGIN_FAILED, PASSWORD_CHANGE, SUSPICIOUS_ACTIVITY, ACCOUNT_LOCKED)
+        * risk_score : INTEGER
+        * details : JSONB
+        * ip_address : INET
+        * user_agent : TEXT
+        * created_at : TIMESTAMP
+    }
+}
+
+package "Notification Schema" {
+    entity "notifications" as notifications {
+        * notification_id : UUID <<PK>>
+        --
+        * user_id : UUID
+        * template_id : VARCHAR(100)
+        * channel : ENUM(EMAIL, SMS, PUSH, IN_APP)
+        * subject : VARCHAR(255)
+        * content : TEXT
+        * status : ENUM(PENDING, SENT, DELIVERED, FAILED, OPENED)
+        * scheduled_at : TIMESTAMP
+        * sent_at : TIMESTAMP
+        * delivered_at : TIMESTAMP
+        * opened_at : TIMESTAMP
+        * metadata : JSONB
+        * created_at : TIMESTAMP
+    }
+
+    entity "notification_preferences" as notification_preferences {
+        * preference_id : UUID <<PK>>
+        * user_id : UUID <<FK>>
+        --
+        * notification_type : VARCHAR(100)
+        * email_enabled : BOOLEAN DEFAULT TRUE
+        * sms_enabled : BOOLEAN DEFAULT TRUE
+        * push_enabled : BOOLEAN DEFAULT TRUE
+        * in_app_enabled : BOOLEAN DEFAULT TRUE
+        * created_at : TIMESTAMP
+        * updated_at : TIMESTAMP
+    }
+}
+
+' Relationships
+users ||--|| user_profiles : "has profile"
+users ||--o{ user_sessions : "has sessions"
+users ||--o{ user_accounts : "owns accounts"
+users ||--o{ kyc_applications : "submits KYC"
+users ||--o{ audit_logs : "generates logs"
+users ||--o{ security_events : "triggers events"
+users ||--o{ notifications : "receives notifications"
+users ||--|| notification_preferences : "has preferences"
+
+kyc_applications ||--o{ kyc_documents : "contains documents"
+kyc_applications ||--o{ compliance_checks : "undergoes checks"
+
+@enduml
+
+@startuml Database Indexes and Performance
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Database Indexes and Performance Optimization
+
+package "Primary Indexes" {
+    note as idx_primary
+        **Primary Keys (Clustered Indexes)**
+        • users.user_id
+        • user_profiles.profile_id
+        • user_sessions.session_id
+        • kyc_applications.kyc_id
+        • event_store.event_id
+        • audit_logs.audit_id
+    end note
+}
+
+package "Unique Indexes" {
+    note as idx_unique
+        **Unique Constraints**
+        • users.email (UNIQUE)
+        • users.phone_number (UNIQUE)
+        • event_store.sequence_number (UNIQUE)
+        • event_snapshots.aggregate_id (UNIQUE)
+    end note
+}
+
+package "Performance Indexes" {
+    note as idx_performance
+        **Query Performance Indexes**
+
+        **User Authentication:**
+        • idx_users_email_status (email, status)
+        • idx_users_phone_status (phone_number, status)
+        • idx_sessions_user_active (user_id, is_active, expires_at)
+
+        **KYC Processing:**
+        • idx_kyc_user_status (user_id, application_status)
+        • idx_kyc_status_created (application_status, created_at)
+        • idx_documents_kyc_type (kyc_id, document_type, verification_status)
+
+        **Event Sourcing:**
+        • idx_events_aggregate (aggregate_id, aggregate_type, sequence_number)
+        • idx_events_type_created (event_type, created_at)
+
+        **Audit & Security:**
+        • idx_audit_user_created (user_id, created_at)
+        • idx_security_user_type (user_id, event_type, created_at)
+        • idx_security_ip_created (ip_address, created_at)
+
+        **Notifications:**
+        • idx_notifications_user_status (user_id, status, scheduled_at)
+    end note
+}
+
+package "Partitioning Strategy" {
+    note as partitioning
+        **Table Partitioning for Scale**
+
+        **Time-based Partitioning:**
+        • audit_logs: Monthly partitions
+        • security_events: Monthly partitions
+        • event_store: Monthly partitions
+        • notifications: Monthly partitions
+
+        **Hash Partitioning:**
+        • user_sessions: By user_id hash
+
+        **Archive Strategy:**
+        • Move old partitions to cold storage
+        • Retain 2 years online, archive older data
+    end note
+}
+
+@enduml
+
+@startuml Data Relationships and Constraints
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title Data Relationships and Business Rules
+
+package "Business Rules" {
+    note as business_rules
+        **User Management Rules:**
+        • User email must be unique across system
+        • Phone number must be unique and validated
+        • Users cannot have duplicate active sessions from same device
+        • Failed login attempts increment, account locks after 5 attempts
+
+        **KYC Rules:**
+        • User can only have one active KYC application
+        • KYC documents must be under 10MB
+        • Tier 2+ KYC requires government ID + proof of address
+        • KYC approval expires after 12 months
+
+        **Account Rules:**
+        • Users must complete KYC before account creation
+        • Primary account holder must be KYC approved
+        • Joint accounts require all parties to be KYC approved
+
+        **Security Rules:**
+        • Sessions expire after 24 hours of inactivity
+        • Refresh tokens rotate on each use
+        • Suspicious activity triggers automatic review
+        • Password changes invalidate all existing sessions
+    end note
+}
+
+package "Data Integrity" {
+    note as constraints
+        **Foreign Key Constraints:**
+        • user_profiles.user_id → users.user_id
+        • user_sessions.user_id → users.user_id
+        • user_accounts.user_id → users.user_id
+        • kyc_applications.user_id → users.user_id
+        • kyc_documents.kyc_id → kyc_applications.kyc_id
+        • compliance_checks.kyc_id → kyc_applications.kyc_id
+        • audit_logs.user_id → users.user_id
+        • security_events.user_id → users.user_id
+        • notifications.user_id → users.user_id
+        • notification_preferences.user_id → users.user_id
+
+        **Check Constraints:**
+        • users.status IN valid enum values
+        • kyc_applications.risk_score BETWEEN 0 AND 1000
+        • compliance_checks.score BETWEEN 0 AND 100
+        • users.failed_login_attempts >= 0
+        • user_sessions.expires_at > created_at
+    end note
+}
+
+package "Event Sourcing Patterns" {
+    note as event_patterns
+        **Event Store Design:**
+        • Immutable event records
+        • Sequential ordering by sequence_number
+        • Events grouped by aggregate_id
+        • Snapshots for performance optimization
+
+        **Event Types:**
+        • UserRegistrationInitiated
+        • UserStatusUpdated
+        • KYCApplicationSubmitted
+        • KYCDocumentUploaded
+        • KYCApproved/Rejected
+        • LoginSuccessful/Failed
+        • AccountCreated/Closed
+        • PasswordChanged
+        • SessionExpired
+
+        **Metadata Fields:**
+        • correlation_id: Request tracing
+        • causation_id: Event causation chain
+        • user_id: Actor identification
+        • ip_address: Source tracking
+        • timestamp: Precise ordering
+    end note
+}
+
+@enduml
