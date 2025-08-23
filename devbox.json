@@ -1,0 +1,13 @@
+{
+    "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.15.1/.schema/devbox.schema.json",
+    "packages": [],
+    "shell": {
+      "init_hook": [],
+      "scripts": {
+        "test": "cargo test -- --show-output",
+        "start": "cargo run",
+        "build-doc": "cargo-doc"
+      }
+    }
+  }
+  
