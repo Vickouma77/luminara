@@ -1,0 +1,10 @@
+[package]
+name = "auth-service"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true
