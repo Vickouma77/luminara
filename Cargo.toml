@@ -1,8 +1,26 @@
 [workspace]
 members = [
+    # Core Services
     "services/auth-service",
     "services/user-service",
-    "shared"
+    "services/account-service",
+    "services/transaction-service",
+    "services/kyc-service",
+    "services/notification-service",
+    "services/payment-service",
+    
+    # Infrastructure
+    "infrastructure/api-gateway",
+    "infrastructure/event-bus",
+    
+    # Shared Libraries
+    "shared/domain",
+    "shared/infrastructure",
+    "shared/middleware",
+    "shared/errors",
+    "shared/events",
+    "shared/database",
+    "shared/telemetry",
 ]
 resolver = "2"
 
@@ -10,8 +28,75 @@ resolver = "2"
 edition = "2021"
 version = "0.1.0"
 authors = ["Vickprestone20@gmail.com"]
+rust-version = "1.75"
 
 [workspace.dependencies]
+# Async Runtime
+tokio = { version = "1.35", features = ["full"] }
+async-trait = "0.1"
+
+# Web Framework
+actix-web = "4.4"
+actix-cors = "0.7"
+actix-rt = "2.9"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate"] }
+deadpool-postgres = "0.12"
+
+# Error Handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging & Tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-actix-web = "0.7"
+tracing-opentelemetry = "0.22"
+
+# Observability
+opentelemetry = "0.21"
+opentelemetry-jaeger = "0.20"
+prometheus = "0.13"
+
+# Configuration
+config = "0.13"
+dotenvy = "0.15"
+
+# Security
+argon2 = "0.5"
+jsonwebtoken = "9.2"
+uuid = { version = "1.6", features = ["serde", "v4"] }
+
+# HTTP Client
+reqwest = { version = "0.11", features = ["json"] }
+
+# DateTime
+chrono = { version = "0.4", features = ["serde"] }
+
+# Validation
+validator = { version = "0.16", features = ["derive"] }
+
+# Event Streaming (optional)
+rdkafka = { version = "0.35", features = ["cmake-build"] }
+
+# Shared Crates (Internal)
+shared-domain = { path = "shared/domain" }
+shared-infrastructure = { path = "shared/infrastructure" }
+shared-middleware = { path = "shared/middleware" }
+shared-errors = { path = "shared/errors" }
+shared-events = { path = "shared/events" }
+shared-database = { path = "shared/database" }
+shared-telemetry = { path = "shared/telemetry" }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+enum_glob_use = "deny"
+unwrap_used = "warn"
+expect_used = "warn"

@@ -1,0 +1,17 @@
+[package]
+name = "shared-infrastructure"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+config.workspace = true
+dotenvy.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+reqwest.workspace = true
+
+[lints]
+workspace = true

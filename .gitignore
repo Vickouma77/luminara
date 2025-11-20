@@ -1,6 +1,48 @@
-target
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
 *.idea
-*.vscode
 *.xml
 *.iml
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.*.local
 .devbox
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker volumes
+docker/data/
+
+# SQLx
+.sqlx/

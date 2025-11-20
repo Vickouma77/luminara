@@ -1,0 +1,16 @@
+[package]
+name = "shared-domain"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+validator.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

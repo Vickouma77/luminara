@@ -1,11 +1,10 @@
 [package]
-name = "user-service"
+name = "account-service"
 edition.workspace = true
 version.workspace = true
 authors.workspace = true
 
 [dependencies]
-# Workspace dependencies
 tokio.workspace = true
 actix-web.workspace = true
 actix-cors.workspace = true
@@ -23,13 +22,13 @@ thiserror.workspace = true
 config.workspace = true
 dotenvy.workspace = true
 
-# Shared internal libraries
 shared-domain.workspace = true
 shared-infrastructure.workspace = true
 shared-middleware.workspace = true
 shared-errors.workspace = true
 shared-database.workspace = true
 shared-telemetry.workspace = true
+shared-events.workspace = true
 
 [lints]
 workspace = true
