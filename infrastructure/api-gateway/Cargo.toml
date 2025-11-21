@@ -4,6 +4,14 @@ edition.workspace = true
 version.workspace = true
 authors.workspace = true
 
+[lib]
+name = "api_gateway"
+path = "src/lib.rs"
+
+[[bin]]
+name = "api-gateway"
+path = "src/main.rs"
+
 [dependencies]
 tokio.workspace = true
 actix-web.workspace = true
@@ -20,6 +28,7 @@ config.workspace = true
 dotenvy.workspace = true
 reqwest.workspace = true
 jsonwebtoken.workspace = true
+lazy_static = "1.4"
 
 shared-infrastructure.workspace = true
 shared-middleware.workspace = true

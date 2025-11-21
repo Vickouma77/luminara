@@ -147,7 +147,7 @@ This project is licensed under the MIT License.
 
 ## 👥 Authors
 
-- Victor Ouma - [@Vickouma77](https://github.com/Vickouma77)
+- Vick Preston - [@Vickouma77](https://github.com/Vickouma77)
 
 ## 🗺️ Roadmap
 
