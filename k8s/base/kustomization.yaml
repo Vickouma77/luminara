@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: luminara
+
+resources:
+  - namespace.yaml
+  - api-gateway/
+  - auth-service/
+  - user-service/
+  - account-service/
+  - transaction-service/
+  - kyc-service/
+  - notification-service/
+  - payment-service/
+  - postgres/
+  - redis/
+
+commonLabels:
+  app.kubernetes.io/part-of: luminara
+  app.kubernetes.io/managed-by: argocd
+
+configMapGenerator:
+  - name: luminara-config
+    literals:
+      - LOG_LEVEL=info
+      - RUST_LOG=info
+
+images:
+  - name: api-gateway
+    newName: ghcr.io/vickouma77/luminara-api-gateway
+    newTag: latest
+  - name: auth-service
+    newName: ghcr.io/vickouma77/luminara-auth-service
+    newTag: latest
+  - name: user-service
+    newName: ghcr.io/vickouma77/luminara-user-service
+    newTag: latest
+  - name: account-service
+    newName: ghcr.io/vickouma77/luminara-account-service
+    newTag: latest
+  - name: transaction-service
+    newName: ghcr.io/vickouma77/luminara-transaction-service
+    newTag: latest
+  - name: kyc-service
+    newName: ghcr.io/vickouma77/luminara-kyc-service
+    newTag: latest
+  - name: notification-service
+    newName: ghcr.io/vickouma77/luminara-notification-service
+    newTag: latest
+  - name: payment-service
+    newName: ghcr.io/vickouma77/luminara-payment-service
+    newTag: latest

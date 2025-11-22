@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: luminara
+  namespace: argocd
+spec:
+  description: Luminara Banking Platform
+  
+  sourceRepos:
+    - https://github.com/Vickouma77/luminara.git
+  
+  destinations:
+    - namespace: 'luminara-*'
+      server: https://kubernetes.default.svc
+  
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: '*'
+    - group: 'apps'
+      kind: '*'
+    - group: 'batch'
+      kind: '*'
+    - group: 'networking.k8s.io'
+      kind: '*'
+    - group: 'autoscaling'
+      kind: '*'
+    - group: 'policy'
+      kind: '*'
+  
+  roles:
+    - name: developer
+      description: Developers with read-only access
+      policies:
+        - p, proj:luminara:developer, applications, get, luminara/*, allow
+        - p, proj:luminara:developer, applications, sync, luminara/luminara-dev, allow
+      groups:
+        - developers
+    
+    - name: operator
+      description: Platform operators with deployment access
+      policies:
+        - p, proj:luminara:operator, applications, *, luminara/*, allow
+        - p, proj:luminara:operator, applications, delete, luminara/luminara-prod, deny
+      groups:
+        - platform-operators
+    
+    - name: admin
+      description: Full access to all environments
+      policies:
+        - p, proj:luminara:admin, applications, *, luminara/*, allow
+      groups:
+        - platform-admins

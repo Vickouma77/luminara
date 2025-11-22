@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: luminara-prod
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: luminara-alerts
+    notifications.argoproj.io/subscribe.on-sync-succeeded.slack: luminara-alerts
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: luminara
+  
+  source:
+    repoURL: https://github.com/Vickouma77/luminara.git
+    targetRevision: main
+    path: k8s/overlays/production
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: luminara-prod
+  
+  syncPolicy:
+    # MANUAL sync only for production
+    automated: null
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 2
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 10m
+  
+  revisionHistoryLimit: 50
+  
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

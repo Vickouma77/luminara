@@ -1,0 +1,57 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: luminara-prod
+
+resources:
+  - ../../base
+  - ingress.yaml
+  - network-policies.yaml
+  - pod-disruption-budgets.yaml
+
+commonLabels:
+  environment: production
+
+replicas:
+  - name: api-gateway
+    count: 5
+  - name: auth-service
+    count: 3
+  - name: user-service
+    count: 3
+  - name: account-service
+    count: 3
+  - name: transaction-service
+    count: 5
+  - name: kyc-service
+    count: 2
+  - name: notification-service
+    count: 2
+  - name: payment-service
+    count: 3
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 200m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 256Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 1000m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 1Gi
+    target:
+      kind: Deployment
+      labelSelector: "app.kubernetes.io/part-of=luminara"
+
+configMapGenerator:
+  - name: luminara-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=warn
+      - RUST_LOG=warn,luminara=info
+      - ENVIRONMENT=production

@@ -1,0 +1,56 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: luminara-dev
+
+resources:
+  - ../../base
+
+namePrefix: dev-
+
+commonLabels:
+  environment: development
+
+replicas:
+  - name: api-gateway
+    count: 1
+  - name: auth-service
+    count: 1
+  - name: user-service
+    count: 1
+  - name: account-service
+    count: 1
+  - name: transaction-service
+    count: 1
+  - name: kyc-service
+    count: 1
+  - name: notification-service
+    count: 1
+  - name: payment-service
+    count: 1
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 50m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 64Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 200m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 256Mi
+    target:
+      kind: Deployment
+      labelSelector: "app.kubernetes.io/part-of=luminara"
+
+configMapGenerator:
+  - name: luminara-config
+    behavior: merge
+    literals:
+      - LOG_LEVEL=debug
+      - RUST_LOG=debug
+      - ENVIRONMENT=development

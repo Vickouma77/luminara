@@ -1,0 +1,219 @@
+# name: CD - Production Deployment
+
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       version:
+#         description: 'Version to deploy (e.g., 1.0.0)'
+#         required: true
+#       deployment_strategy:
+#         description: 'Deployment strategy'
+#         required: true
+#         default: 'rolling'
+#         type: choice
+#         options:
+#           - rolling
+#           - blue-green
+#           - canary
+
+# env:
+#   REGISTRY: ghcr.io
+#   IMAGE_PREFIX: ${{ github.repository_owner }}/luminara
+
+# jobs:
+#   pre-deployment-checks:
+#     name: Pre-Deployment Checks
+#     runs-on: ubuntu-latest
+    
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Verify staging deployment
+#         run: |
+#           echo "Verifying staging deployment of v${{ github.event.inputs.version }}"
+#           # Add checks to verify staging is healthy
+
+#       - name: Run smoke tests
+#         run: |
+#           echo "Running smoke tests against staging"
+#           # Add smoke test commands
+
+#       - name: Database migration check
+#         run: |
+#           echo "Checking database migrations"
+#           # Add migration validation
+
+#       - name: Security compliance check
+#         run: |
+#           echo "Running security compliance checks"
+#           # Add compliance validation
+
+#   create-production-pr:
+#     name: Create Production PR
+#     runs-on: ubuntu-latest
+#     needs: pre-deployment-checks
+    
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Update production manifests
+#         run: |
+#           cd k8s/overlays/production
+          
+#           services=(api-gateway auth-service user-service account-service transaction-service kyc-service notification-service payment-service)
+          
+#           for service in "${services[@]}"; do
+#             kustomize edit set image \
+#               ${service}=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${service}:v${{ github.event.inputs.version }}
+#           done
+
+#       - name: Create Pull Request
+#         uses: peter-evans/create-pull-request@v5
+#         with:
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#           commit-message: "chore: deploy v${{ github.event.inputs.version }} to production"
+#           title: "🚀 Production Deployment: v${{ github.event.inputs.version }}"
+#           body: |
+#             ## Production Deployment - v${{ github.event.inputs.version }}
+            
+#             ### 🎯 Deployment Details
+#             - **Version**: v${{ github.event.inputs.version }}
+#             - **Strategy**: ${{ github.event.inputs.deployment_strategy }}
+#             - **Requested by**: @${{ github.actor }}
+            
+#             ### ✅ Pre-Deployment Verification
+#             - [x] Staging deployment verified
+#             - [x] Smoke tests passed
+#             - [x] Database migrations validated
+#             - [x] Security compliance checked
+            
+#             ### 📋 Deployment Checklist
+#             - [ ] **Approvals**: Minimum 2 reviewers required
+#             - [ ] **Communication**: Team notified via Slack
+#             - [ ] **Monitoring**: Grafana dashboards ready
+#             - [ ] **Rollback Plan**: Documented and tested
+#             - [ ] **On-Call**: Engineer assigned
+            
+#             ### 🔄 Deployment Strategy: ${{ github.event.inputs.deployment_strategy }}
+            
+#             #### Rolling Update
+#             - Max surge: 25%
+#             - Max unavailable: 0%
+#             - Estimated time: 10-15 minutes
+            
+#             ### 🚨 Rollback Procedure
+#             ```bash
+#             # Revert to previous version
+#             argocd app rollback luminara-prod
+            
+#             # Or manual rollback
+#             kubectl rollout undo deployment/<service-name> -n luminara-prod
+#             ```
+            
+#             ### 📊 Post-Deployment Monitoring
+#             - [ ] Check error rates (target: < 0.1%)
+#             - [ ] Verify latency metrics (p95 < 200ms)
+#             - [ ] Monitor resource usage
+#             - [ ] Validate business metrics
+            
+#             ### 🔗 Links
+#             - [Grafana Dashboard](https://grafana.luminara.io/dashboards/production)
+#             - [ArgoCD Application](https://argocd.luminara.io/applications/luminara-prod)
+#             - [Release Notes](https://github.com/${{ github.repository }}/releases/tag/v${{ github.event.inputs.version }})
+            
+#             ---
+            
+#             **⚠️ PRODUCTION DEPLOYMENT - REQUIRES CAREFUL REVIEW**
+#           branch: release/production-${{ github.event.inputs.version }}
+#           base: main
+#           labels: |
+#             production
+#             critical
+#           reviewers: |
+#             tech-lead
+#             platform-engineer
+
+#   notify-deployment-ready:
+#     name: Notify Deployment Ready
+#     runs-on: ubuntu-latest
+#     needs: create-production-pr
+    
+#     steps:
+#       - name: Send Slack notification
+#         uses: 8398a7/action-slack@v3
+#         with:
+#           status: custom
+#           custom_payload: |
+#             {
+#               text: "🚨 Production Deployment PR Ready",
+#               attachments: [{
+#                 color: 'warning',
+#                 title: 'v${{ github.event.inputs.version }} - Awaiting Approval',
+#                 text: 'A production deployment PR has been created and requires approval.\n\n*Strategy*: ${{ github.event.inputs.deployment_strategy }}\n*Requested by*: @${{ github.actor }}\n\nPlease review and approve to proceed with deployment.',
+#                 actions: [{
+#                   type: 'button',
+#                   text: 'Review PR',
+#                   url: 'https://github.com/${{ github.repository }}/pulls'
+#                 }]
+#               }]
+#             }
+#           webhook_url: ${{ secrets.SLACK_WEBHOOK_CRITICAL }}
+
+#   post-deployment:
+#     name: Post-Deployment Tasks
+#     runs-on: ubuntu-latest
+#     needs: create-production-pr
+#     if: github.event.pull_request.merged == true
+    
+#     steps:
+#       - name: Create GitHub Release
+#         uses: actions/create-release@v1
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#         with:
+#           tag_name: v${{ github.event.inputs.version }}
+#           release_name: Release v${{ github.event.inputs.version }}
+#           body: |
+#             ## What's Changed
+            
+#             Deployed to production on $(date)
+            
+#             ### Services Updated
+#             - API Gateway
+#             - Auth Service
+#             - User Service
+#             - Account Service
+#             - Transaction Service
+#             - KYC Service
+#             - Notification Service
+#             - Payment Service
+            
+#             ### Deployment Details
+#             - Strategy: ${{ github.event.inputs.deployment_strategy }}
+#             - Deployed by: @${{ github.actor }}
+            
+#             See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+#           draft: false
+#           prerelease: false
+
+#       - name: Update documentation
+#         run: |
+#           echo "Updating production documentation"
+#           # Add documentation update commands
+
+#       - name: Send success notification
+#         uses: 8398a7/action-slack@v3
+#         with:
+#           status: custom
+#           custom_payload: |
+#             {
+#               text: "✅ Production Deployment Successful",
+#               attachments: [{
+#                 color: 'good',
+#                 title: 'v${{ github.event.inputs.version }} - Deployed',
+#                 text: 'Version v${{ github.event.inputs.version }} has been successfully deployed to production.\n\n*Strategy*: ${{ github.event.inputs.deployment_strategy }}\n*Deployed by*: @${{ github.actor }}\n\nMonitoring dashboards have been updated.'
+#               }]
+#             }
+#           webhook_url: ${{ secrets.SLACK_WEBHOOK }}
