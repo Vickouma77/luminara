@@ -68,7 +68,9 @@ pub async fn forward_request(
         let name = header_name.as_str();
         if name != "connection" {
             // Convert reqwest header value to actix-web header value via bytes
-            if let Ok(value) = actix_web::http::header::HeaderValue::from_bytes(header_value.as_bytes()) {
+            if let Ok(value) =
+                actix_web::http::header::HeaderValue::from_bytes(header_value.as_bytes())
+            {
                 client_resp.insert_header((name, value));
             }
         }
