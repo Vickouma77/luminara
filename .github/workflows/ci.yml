@@ -1,24 +1,31 @@
 name: CI Pipeline
 
+# Triggers: Push to main/develop branches or PRs targeting them
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
+# Global environment variables for all jobs
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository_owner }}/luminara
 
 jobs:
+  # ============================================================================
+  # JOB 1: Code Quality & Testing
+  # ============================================================================
   lint-and-test:
     name: Lint and Test
     runs-on: ubuntu-latest
     
     steps:
+      # Checkout the repository code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Install Rust toolchain with formatting and linting tools
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -27,6 +34,7 @@ jobs:
           components: rustfmt, clippy
           override: true
 
+      # Cache Cargo registry to speed up dependency downloads
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -35,6 +43,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
 
+      # Cache Cargo git dependencies
       - name: Cache cargo index
         uses: actions/cache@v3
         with:
@@ -43,6 +52,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-git-
 
+      # Cache compiled artifacts to speed up builds
       - name: Cache target directory
         uses: actions/cache@v3
         with:
@@ -51,160 +61,190 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-target-
 
+      # Verify code formatting follows Rust standards
       - name: Check formatting
-        run: cargo fmt --all -- --check
+        run: cargo fmt -- --check
 
+      # Run Clippy linter with all features enabled, treating warnings as errors
       - name: Run clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
+      # Execute unit tests (tests within src/ files)
       - name: Run unit tests
         run: cargo test --workspace --lib
 
+      # Execute integration tests (tests in tests/ directory)
       - name: Run integration tests
         run: cargo test --workspace --tests
 
+      # Run documentation tests (code examples in /// comments)
       - name: Run doc tests
         run: cargo test --workspace --doc
 
+  # ============================================================================
+  # JOB 2: Security Scanning
+  # ============================================================================
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    needs: lint-and-test
+    needs: lint-and-test  # Only run if tests pass
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Scan filesystem for vulnerabilities in dependencies and code
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
+          scan-type: 'fs'           # Scan filesystem
+          scan-ref: '.'             # Scan current directory
+          format: 'sarif'           # Output in SARIF format for GitHub Security
           output: 'trivy-results.sarif'
 
+      # Upload scan results to GitHub Security tab (always run even if scan fails)
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v2
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 
+      # Check Cargo dependencies for known security vulnerabilities
       - name: Audit dependencies
         run: |
           cargo install cargo-audit
           cargo audit
 
-  build-images:
-    name: Build Docker Images
-    runs-on: ubuntu-latest
-    needs: [lint-and-test, security-scan]
-    if: github.event_name == 'push'
-    
-    strategy:
-      matrix:
-        service:
-          - api-gateway
-          - auth-service
-          - user-service
-          - account-service
-          - transaction-service
-          - kyc-service
-          - notification-service
-          - payment-service
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # ============================================================================
+  # JOB 3: Docker Image Building (DISABLED - Enable when infrastructure is ready)
+  # ============================================================================
+  # build-images:
+  #   name: Build Docker Images
+  #   runs-on: ubuntu-latest
+  #   needs: [lint-and-test, security-scan]  # Run after tests and security pass
+  #   if: github.event_name == 'push'        # Only build on push events (not PRs)
+  #   
+  #   # Build all 8 microservices in parallel using matrix strategy
+  #   strategy:
+  #     matrix:
+  #       service:
+  #         - api-gateway
+  #         - auth-service
+  #         - user-service
+  #         - account-service
+  #         - transaction-service
+  #         - kyc-service
+  #         - notification-service
+  #         - payment-service
+  #   
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     # Set up Docker Buildx for multi-platform builds and caching
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
+  #
+  #     # Authenticate with GitHub Container Registry using workflow token
+  #     - name: Log in to GitHub Container Registry
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ${{ env.REGISTRY }}
+  #         username: ${{ github.actor }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
+  #
+  #     # Generate Docker tags and labels based on branch/PR/commit
+  #     - name: Extract metadata
+  #       id: meta
+  #       uses: docker/metadata-action@v5
+  #       with:
+  #         images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
+  #         tags: |
+  #           type=ref,event=branch          # Tag with branch name
+  #           type=ref,event=pr              # Tag with PR number
+  #           type=sha,prefix=dev-           # Tag with commit SHA (dev-abc123)
+  #           type=raw,value=latest,enable={{is_default_branch}}  # Tag latest for main
+  #
+  #     # Build multi-architecture image and push to registry
+  #     - name: Build and push Docker image
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         context: .
+  #         file: ./docker/${{ matrix.service }}.Dockerfile
+  #         push: true
+  #         tags: ${{ steps.meta.outputs.tags }}
+  #         labels: ${{ steps.meta.outputs.labels }}
+  #         cache-from: type=gha              # Use GitHub Actions cache for layers
+  #         cache-to: type=gha,mode=max       # Save all layers to cache
+  #         platforms: linux/amd64,linux/arm64  # Build for AMD64 and ARM64
+  #
+  #     # Scan the built image for vulnerabilities
+  #     - name: Scan image with Trivy
+  #       uses: aquasecurity/trivy-action@master
+  #       with:
+  #         image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
+  #         format: 'sarif'
+  #         output: 'trivy-image-results.sarif'
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  # ============================================================================
+  # JOB 4: GitOps Manifest Updates (DISABLED - Enable when infrastructure is ready)
+  # ============================================================================
+  # update-manifests:
+  #   name: Update Kubernetes Manifests
+  #   runs-on: ubuntu-latest
+  #   needs: build-images                 # Run after images are built
+  #   if: github.ref == 'refs/heads/main' # Only update manifests on main branch
+  #   
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #
+  #     # Update dev environment Kustomize manifests with new image tags
+  #     - name: Update dev manifests
+  #       run: |
+  #         cd k8s/overlays/dev
+  #         
+  #         # Array of all microservices
+  #         services=(api-gateway auth-service user-service account-service transaction-service kyc-service notification-service payment-service)
+  #         
+  #         # Update each service's image tag with the new commit SHA
+  #         for service in "${services[@]}"; do
+  #           kustomize edit set image \
+  #             ${service}=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${service}:dev-${{ github.sha }}
+  #         done
+  #
+  #     # Commit updated manifests back to repository (triggers ArgoCD sync)
+  #     - name: Commit and push changes
+  #       run: |
+  #         git config user.name "GitHub Actions Bot"
+  #         git config user.email "actions@github.com"
+  #         git add k8s/overlays/dev/kustomization.yaml
+  #         git diff --staged --quiet || git commit -m "chore: update dev images to ${{ github.sha }}"
+  #         git push
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix=dev-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./docker/${{ matrix.service }}.Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-
-      - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
-          format: 'sarif'
-          output: 'trivy-image-results.sarif'
-
-  update-manifests:
-    name: Update Kubernetes Manifests
-    runs-on: ubuntu-latest
-    needs: build-images
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update dev manifests
-        run: |
-          cd k8s/overlays/dev
-          
-          # Update image tags in kustomization.yaml
-          services=(api-gateway auth-service user-service account-service transaction-service kyc-service notification-service payment-service)
-          
-          for service in "${services[@]}"; do
-            kustomize edit set image \
-              ${service}=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${service}:dev-${{ github.sha }}
-          done
-
-      - name: Commit and push changes
-        run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-          git add k8s/overlays/dev/kustomization.yaml
-          git diff --staged --quiet || git commit -m "chore: update dev images to ${{ github.sha }}"
-          git push
-
-  notify:
-    name: Notify
-    runs-on: ubuntu-latest
-    needs: [build-images, update-manifests]
-    if: always()
-    
-    steps:
-      - name: Send Slack notification
-        uses: 8398a7/action-slack@v3
-        if: always()
-        with:
-          status: ${{ job.status }}
-          text: |
-            CI Pipeline ${{ job.status }}
-            Commit: ${{ github.sha }}
-            Branch: ${{ github.ref }}
-            Author: ${{ github.actor }}
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+  # ============================================================================
+  # JOB 5: Notifications (DISABLED - Enable when infrastructure is ready)
+  # ============================================================================
+  # notify:
+  #   name: Notify
+  #   runs-on: ubuntu-latest
+  #   needs: [build-images, update-manifests]  # Run after all jobs complete
+  #   if: always()                              # Always run, even if previous jobs fail
+  #   
+  #   steps:
+  #     # Send pipeline status to Slack channel
+  #     - name: Send Slack notification
+  #       uses: 8398a7/action-slack@v3
+  #       if: always()
+  #       with:
+  #         status: ${{ job.status }}
+  #         text: |
+  #           CI Pipeline ${{ job.status }}
+  #           Commit: ${{ github.sha }}
+  #           Branch: ${{ github.ref }}
+  #           Author: ${{ github.actor }}
+  #         webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}

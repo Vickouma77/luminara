@@ -1,7 +1,6 @@
 [alias]
 lint = "clippy --all-targets --all-features --workspace -- -D warnings"
-fmt = "fmt --all"
-check-fmt = "fmt --all -- --check"
+check-fmt = "fmt -- --check"
 fix-lint = "clippy --all-targets --all-features --workspace --fix -- -D warnings"
 
 [build]
