@@ -1,13 +1,13 @@
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     Error,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
 use std::collections::HashMap;
-use std::future::{ready, Ready, Future};
+use std::future::{Future, Ready, ready};
 use std::pin::Pin;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use std::rc::Rc;
 
 #[derive(Clone)]
 struct RateLimitEntry {
@@ -35,12 +35,12 @@ impl RateLimiter {
         let mut store = self.store.lock().unwrap();
         let now = Instant::now();
 
-        let entry = store.entry(client_id.to_string()).or_insert_with(|| {
-            RateLimitEntry {
+        let entry = store
+            .entry(client_id.to_string())
+            .or_insert_with(|| RateLimitEntry {
                 count: 0,
                 reset_time: now + Duration::from_secs(self.window_secs),
-            }
-        });
+            });
 
         // Reset if window has passed
         if now >= entry.reset_time {
@@ -115,7 +115,7 @@ where
                 Err(_) => {
                     tracing::warn!("Rate limit exceeded for client: {}", client_id);
                     Err(actix_web::error::ErrorTooManyRequests(
-                        "Rate limit exceeded. Please try again later."
+                        "Rate limit exceeded. Please try again later.",
                     ))
                 }
             }

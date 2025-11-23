@@ -5,7 +5,7 @@ use api_gateway::{Config, RateLimiter};
 fn test_config_loading() {
     let config = Config::load();
     assert!(config.is_ok(), "Config should load successfully");
-    
+
     let config = config.unwrap();
     assert_eq!(config.server.host, "0.0.0.0");
     assert_eq!(config.server.port, 8000);

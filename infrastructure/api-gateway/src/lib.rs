@@ -1,5 +1,5 @@
 //! API Gateway Library
-//! 
+//!
 //! This library provides the core functionality for the Luminara Banking Platform API Gateway.
 //! It includes routing, authentication, rate limiting, and request proxying capabilities.
 
@@ -18,6 +18,6 @@ pub mod prelude {
     pub use crate::config::Config;
     pub use crate::middleware::auth::AuthMiddleware;
     pub use crate::middleware::rate_limit::RateLimiter;
-    pub use crate::routes;
     pub use crate::proxy;
+    pub use crate::routes;
 }

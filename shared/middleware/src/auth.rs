@@ -1,10 +1,10 @@
 //! Authentication middleware
 
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     Error,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
-use std::future::{ready, Ready, Future};
+use std::future::{Future, Ready, ready};
 use std::pin::Pin;
 
 pub struct AuthMiddleware;

@@ -36,7 +36,7 @@ pub struct AuthConfig {
 impl Config {
     pub fn load() -> Result<Self, ConfigError> {
         let run_env = std::env::var("RUN_ENV").unwrap_or_else(|_| "development".into());
-        
+
         ConfigBuilder::builder()
             .set_default("server.host", "0.0.0.0")?
             .set_default("server.port", 8000)?

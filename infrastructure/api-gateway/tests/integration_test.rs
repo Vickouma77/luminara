@@ -1,4 +1,4 @@
-use actix_web::{test, web, App};
+use actix_web::{App, test, web};
 use api_gateway::prelude::*;
 use std::sync::Arc;
 
@@ -25,18 +25,16 @@ fn create_test_app() -> App<
 async fn test_health_check() {
     let app = test::init_service(create_test_app()).await;
 
-    let req = test::TestRequest::get()
-        .uri("/api/v1/health")
-        .to_request();
+    let req = test::TestRequest::get().uri("/api/v1/health").to_request();
 
     let resp = test::call_service(&app, req).await;
-    
+
     assert!(resp.status().is_success());
     assert_eq!(resp.status(), actix_web::http::StatusCode::OK);
 
     let body = test::read_body(resp).await;
     let body_str = std::str::from_utf8(&body).unwrap();
-    
+
     assert!(body_str.contains("healthy"));
     assert!(body_str.contains("api-gateway"));
 }
@@ -55,7 +53,7 @@ async fn test_auth_routes_accessible() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    
+
     // We expect 502 Bad Gateway since auth service isn't running
     // But the route should be registered (not 404)
     assert_ne!(resp.status(), actix_web::http::StatusCode::NOT_FOUND);
@@ -65,12 +63,10 @@ async fn test_auth_routes_accessible() {
 async fn test_protected_route_without_auth() {
     let app = test::init_service(create_test_app()).await;
 
-    let req = test::TestRequest::get()
-        .uri("/api/v1/users")
-        .to_request();
+    let req = test::TestRequest::get().uri("/api/v1/users").to_request();
 
     let resp = test::try_call_service(&app, req).await;
-    
+
     // Should return Err with unauthorized
     assert!(resp.is_err(), "Should fail without auth token");
 }
@@ -85,7 +81,7 @@ async fn test_protected_route_with_invalid_token() {
         .to_request();
 
     let resp = test::try_call_service(&app, req).await;
-    
+
     // Should return Err with invalid token
     assert!(resp.is_err(), "Should fail with invalid token");
 }
@@ -101,7 +97,7 @@ async fn test_protected_route_with_malformed_header() {
         .to_request();
 
     let resp = test::try_call_service(&app, req).await;
-    
+
     assert!(resp.is_err(), "Should fail with malformed header");
 }
 
@@ -114,9 +110,7 @@ async fn test_rate_limiting() {
 
     // Make multiple requests rapidly
     for _i in 0..110 {
-        let req = test::TestRequest::get()
-            .uri("/api/v1/health")
-            .to_request();
+        let req = test::TestRequest::get().uri("/api/v1/health").to_request();
 
         // Use try_call_service to handle rate limit errors
         match test::try_call_service(&app, req).await {
@@ -131,8 +125,16 @@ async fn test_rate_limiting() {
     }
 
     // Should have some successful and some rate limited
-    assert!(success_count > 0, "Some requests should succeed (got {})", success_count);
-    assert!(rate_limited_count > 0, "Some requests should be rate limited (got {})", rate_limited_count);
+    assert!(
+        success_count > 0,
+        "Some requests should succeed (got {})",
+        success_count
+    );
+    assert!(
+        rate_limited_count > 0,
+        "Some requests should be rate limited (got {})",
+        rate_limited_count
+    );
 }
 
 #[actix_web::test]
@@ -142,8 +144,16 @@ async fn test_all_service_routes_registered() {
     // Test public routes (should return 502 when backend unavailable, not 404)
     let public_routes = vec![
         ("/api/v1/health", "GET", actix_web::http::StatusCode::OK),
-        ("/api/v1/auth/login", "POST", actix_web::http::StatusCode::BAD_GATEWAY),
-        ("/api/v1/auth/register", "POST", actix_web::http::StatusCode::BAD_GATEWAY),
+        (
+            "/api/v1/auth/login",
+            "POST",
+            actix_web::http::StatusCode::BAD_GATEWAY,
+        ),
+        (
+            "/api/v1/auth/register",
+            "POST",
+            actix_web::http::StatusCode::BAD_GATEWAY,
+        ),
     ];
 
     for (route, method, _expected) in public_routes {
@@ -154,7 +164,7 @@ async fn test_all_service_routes_registered() {
         };
 
         let resp = test::call_service(&app, req).await;
-        
+
         // Routes should be registered (not 404)
         assert_ne!(
             resp.status(),
@@ -175,12 +185,10 @@ async fn test_all_service_routes_registered() {
     ];
 
     for route in protected_routes {
-        let req = test::TestRequest::get()
-            .uri(route)
-            .to_request();
+        let req = test::TestRequest::get().uri(route).to_request();
 
         let resp = test::try_call_service(&app, req).await;
-        
+
         // Should return error (auth required) not success (which would mean 404)
         assert!(
             resp.is_err(),
@@ -200,7 +208,7 @@ async fn test_cors_headers() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    
+
     assert!(resp.status().is_success());
     // Note: CORS middleware needs to be added to main.rs for this to pass
     // This test documents the expected behavior
@@ -215,6 +223,6 @@ async fn test_invalid_route() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    
+
     assert_eq!(resp.status(), actix_web::http::StatusCode::NOT_FOUND);
 }

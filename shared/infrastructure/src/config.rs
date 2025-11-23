@@ -24,7 +24,7 @@ pub struct DatabaseConfig {
 impl AppConfig {
     pub fn load() -> Result<Self, ConfigError> {
         let env = std::env::var("RUN_ENV").unwrap_or_else(|_| "development".into());
-        
+
         Config::builder()
             .add_source(File::with_name(&format!("config/{}", env)).required(false))
             .add_source(File::with_name("config/default").required(false))
