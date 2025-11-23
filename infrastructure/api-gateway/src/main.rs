@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use actix_web::{App, HttpServer, middleware::Logger, web};
 use api_gateway::prelude::*;
 use shared_telemetry::init_telemetry;

@@ -7,7 +7,7 @@ use uuid::Uuid;
 /// Base event trait
 pub trait Event {
     fn event_id(&self) -> Uuid;
-    fn event_type(&self) -> &str;
+    fn event_type(&self) -> &'static str;
     fn timestamp(&self) -> DateTime<Utc>;
 }
 
@@ -24,7 +24,7 @@ impl Event for UserCreatedEvent {
     fn event_id(&self) -> Uuid {
         self.event_id
     }
-    fn event_type(&self) -> &str {
+    fn event_type(&self) -> &'static str {
         "user.created"
     }
     fn timestamp(&self) -> DateTime<Utc> {
@@ -45,7 +45,7 @@ impl Event for AccountCreatedEvent {
     fn event_id(&self) -> Uuid {
         self.event_id
     }
-    fn event_type(&self) -> &str {
+    fn event_type(&self) -> &'static str {
         "account.created"
     }
     fn timestamp(&self) -> DateTime<Utc> {
@@ -68,7 +68,7 @@ impl Event for TransactionCompletedEvent {
     fn event_id(&self) -> Uuid {
         self.event_id
     }
-    fn event_type(&self) -> &str {
+    fn event_type(&self) -> &'static str {
         "transaction.completed"
     }
     fn timestamp(&self) -> DateTime<Utc> {

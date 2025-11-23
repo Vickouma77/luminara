@@ -23,6 +23,7 @@ pub struct RateLimiter {
 }
 
 impl RateLimiter {
+    #[must_use]
     pub fn new(max_requests: usize, window_secs: u64) -> Self {
         Self {
             max_requests,
@@ -32,7 +33,10 @@ impl RateLimiter {
     }
 
     fn check_rate_limit(&self, client_id: &str) -> Result<(), ()> {
-        let mut store = self.store.lock().unwrap();
+        let Ok(mut store) = self.store.lock() else {
+            tracing::error!("Failed to acquire rate limiter lock");
+            return Err(());
+        };
         let now = Instant::now();
 
         let entry = store
@@ -107,17 +111,14 @@ where
                 .unwrap_or("unknown")
                 .to_string();
 
-            match limiter.check_rate_limit(&client_id) {
-                Ok(_) => {
-                    let res = service.call(req).await?;
-                    Ok(res)
-                }
-                Err(_) => {
-                    tracing::warn!("Rate limit exceeded for client: {}", client_id);
-                    Err(actix_web::error::ErrorTooManyRequests(
-                        "Rate limit exceeded. Please try again later.",
-                    ))
-                }
+            if let Ok(()) = limiter.check_rate_limit(&client_id) {
+                let res = service.call(req).await?;
+                Ok(res)
+            } else {
+                tracing::warn!("Rate limit exceeded for client: {}", client_id);
+                Err(actix_web::error::ErrorTooManyRequests(
+                    "Rate limit exceeded. Please try again later.",
+                ))
             }
         })
     }

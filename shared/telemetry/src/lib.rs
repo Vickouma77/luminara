@@ -6,7 +6,7 @@ pub fn init_telemetry(service_name: &str) {
     tracing_subscriber::registry()
         .with(
             EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| format!("{}=debug,tower_http=debug", service_name).into()),
+                .unwrap_or_else(|_| format!("{service_name}=debug,tower_http=debug").into()),
         )
         .with(tracing_subscriber::fmt::layer().json())
         .init();

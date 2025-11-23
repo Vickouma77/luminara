@@ -34,6 +34,11 @@ pub struct AuthConfig {
 }
 
 impl Config {
+    /// Load application configuration from environment and files
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if configuration cannot be loaded or deserialized
     pub fn load() -> Result<Self, ConfigError> {
         let run_env = std::env::var("RUN_ENV").unwrap_or_else(|_| "development".into());
 
@@ -48,7 +53,7 @@ impl Config {
             .set_default("services.payment_service_url", "http://localhost:8007")?
             .set_default("services.notification_service_url", "http://localhost:8006")?
             .set_default("auth.jwt_secret", "development-secret-change-in-production")?
-            .add_source(File::with_name(&format!("config/{}", run_env)).required(false))
+            .add_source(File::with_name(&format!("config/{run_env}")).required(false))
             .add_source(File::with_name("config/default").required(false))
             .add_source(Environment::with_prefix("API_GATEWAY").separator("__"))
             .build()?

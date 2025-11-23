@@ -1,3 +1,10 @@
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::cast_possible_truncation,
+    clippy::uninlined_format_args
+)]
+
 use actix_web::{App, HttpResponse, test, web};
 use api_gateway::{AuthMiddleware, RateLimiter};
 use jsonwebtoken::{Algorithm, EncodingKey, Header, encode};

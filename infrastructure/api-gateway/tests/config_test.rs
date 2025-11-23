@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+
 use api_gateway::config::Config;
 
 #[test]
@@ -34,7 +36,7 @@ fn test_config_has_correct_defaults() {
 }
 
 #[test]
-#[ignore] // Skipped due to unsafe environment variable manipulation
+#[ignore = "Skipped due to unsafe environment variable manipulation"]
 fn test_config_from_environment() {
     // This test would require unsafe blocks to manipulate environment variables
     // Skipping for now - can be tested manually with actual env vars set
@@ -55,7 +57,7 @@ fn test_config_clone() {
 #[test]
 fn test_config_debug_format() {
     let config = Config::load().expect("Config should load");
-    let debug_str = format!("{:?}", config);
+    let debug_str = format!("{config:?}");
 
     assert!(debug_str.contains("Config"));
     assert!(debug_str.contains("server"));

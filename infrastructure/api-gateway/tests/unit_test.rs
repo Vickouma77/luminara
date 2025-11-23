@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used)]
+
 // Unit tests that don't need async runtime
 use api_gateway::{Config, RateLimiter};
 

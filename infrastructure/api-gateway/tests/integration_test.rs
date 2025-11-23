@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used, clippy::unwrap_used)]
+
 use actix_web::{App, test, web};
 use api_gateway::prelude::*;
 use std::sync::Arc;
@@ -46,7 +48,7 @@ async fn test_auth_routes_accessible() {
     // Test login endpoint is accessible (should fail with backend unavailable, but route exists)
     let req = test::TestRequest::post()
         .uri("/api/v1/auth/login")
-        .set_json(&serde_json::json!({
+        .set_json(serde_json::json!({
             "email": "test@example.com",
             "password": "password123"
         }))
@@ -127,13 +129,11 @@ async fn test_rate_limiting() {
     // Should have some successful and some rate limited
     assert!(
         success_count > 0,
-        "Some requests should succeed (got {})",
-        success_count
+        "Some requests should succeed (got {success_count})"
     );
     assert!(
         rate_limited_count > 0,
-        "Some requests should be rate limited (got {})",
-        rate_limited_count
+        "Some requests should be rate limited (got {rate_limited_count})"
     );
 }
 
@@ -169,9 +169,7 @@ async fn test_all_service_routes_registered() {
         assert_ne!(
             resp.status(),
             actix_web::http::StatusCode::NOT_FOUND,
-            "Route {} {} should be registered",
-            method,
-            route
+            "Route {method} {route} should be registered"
         );
     }
 
@@ -190,11 +188,7 @@ async fn test_all_service_routes_registered() {
         let resp = test::try_call_service(&app, req).await;
 
         // Should return error (auth required) not success (which would mean 404)
-        assert!(
-            resp.is_err(),
-            "Protected route {} should require auth",
-            route
-        );
+        assert!(resp.is_err(), "Protected route {route} should require auth");
     }
 }
 

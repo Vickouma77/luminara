@@ -63,22 +63,13 @@ where
                 .headers()
                 .get(header::AUTHORIZATION)
                 .and_then(|h| h.to_str().ok())
-                .and_then(|h| {
-                    if h.starts_with("Bearer ") {
-                        Some(h[7..].to_string())
-                    } else {
-                        None
-                    }
-                });
+                .and_then(|h| h.strip_prefix("Bearer ").map(String::from));
 
-            let token = match token {
-                Some(t) => t,
-                None => {
-                    tracing::warn!("Missing or invalid Authorization header");
-                    return Err(actix_web::error::ErrorUnauthorized(
-                        "Missing authorization token",
-                    ));
-                }
+            let Some(token) = token else {
+                tracing::warn!("Missing or invalid Authorization header");
+                return Err(actix_web::error::ErrorUnauthorized(
+                    "Missing authorization token",
+                ));
             };
 
             // Validate JWT token
