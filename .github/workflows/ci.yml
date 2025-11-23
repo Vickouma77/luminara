@@ -88,6 +88,9 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: lint-and-test  # Only run if tests pass
+    permissions:
+      security-events: write  # Required for uploading SARIF results
+      contents: read          # Required for checking out code
     
     steps:
       - name: Checkout code
@@ -104,7 +107,7 @@ jobs:
 
       # Upload scan results to GitHub Security tab (always run even if scan fails)
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
