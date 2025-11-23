@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpResponse, http::header};
+use actix_web::{HttpRequest, HttpResponse};
 use reqwest::Client;
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -35,13 +35,19 @@ pub async fn forward_request(
     tracing::debug!("Forwarding {} request to: {}", req.method(), url);
 
     // Build the forwarded request
-    let mut forward_req = HTTP_CLIENT.request(req.method().clone(), &url);
+    // Convert actix-web Method to reqwest Method via string
+    let method = reqwest::Method::from_bytes(req.method().as_str().as_bytes())
+        .map_err(|_| actix_web::error::ErrorBadRequest("Invalid HTTP method"))?;
+    let mut forward_req = HTTP_CLIENT.request(method, &url);
 
     // Forward headers (except Host and Connection)
     for (header_name, header_value) in req.headers() {
         let name = header_name.as_str();
         if name != "host" && name != "connection" {
-            forward_req = forward_req.header(name, header_value);
+            // Convert actix-web header value to reqwest header value via bytes
+            if let Ok(value) = reqwest::header::HeaderValue::from_bytes(header_value.as_bytes()) {
+                forward_req = forward_req.header(name, value);
+            }
         }
     }
 
@@ -52,13 +58,19 @@ pub async fn forward_request(
     })?;
 
     // Build response
-    let status = response.status();
-    let mut client_resp = HttpResponse::build(status);
+    // Convert reqwest StatusCode to actix-web StatusCode via u16
+    let status_code = actix_web::http::StatusCode::from_u16(response.status().as_u16())
+        .unwrap_or(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR);
+    let mut client_resp = HttpResponse::build(status_code);
 
     // Copy headers from service response
     for (header_name, header_value) in response.headers() {
-        if header_name != header::CONNECTION {
-            client_resp.insert_header((header_name.clone(), header_value.clone()));
+        let name = header_name.as_str();
+        if name != "connection" {
+            // Convert reqwest header value to actix-web header value via bytes
+            if let Ok(value) = actix_web::http::header::HeaderValue::from_bytes(header_value.as_bytes()) {
+                client_resp.insert_header((name, value));
+            }
         }
     }
 
