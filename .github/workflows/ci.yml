@@ -104,7 +104,7 @@ jobs:
 
       # Upload scan results to GitHub Security tab (always run even if scan fails)
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
