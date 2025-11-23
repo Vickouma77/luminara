@@ -69,7 +69,7 @@ dotenvy = "0.15"
 
 # Security
 argon2 = "0.5"
-jsonwebtoken = { version = "10.2.0", default-features = true }
+jsonwebtoken = { version = "10.2.0", default-features = false, features = ["aws_lc_rs"] }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }
 
 # HTTP Client
