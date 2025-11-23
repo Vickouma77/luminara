@@ -117,6 +117,9 @@ jobs:
         run: |
           cargo install cargo-audit
           cargo audit
+          
+          cargo install cargo-deny
+          cargo deny check advisories
 
   # ============================================================================
   # JOB 3: Docker Image Building (DISABLED - Enable when infrastructure is ready)
