@@ -45,7 +45,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0"
 
 # Database
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate"] }
+sqlx = { version = "0.8.2", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "migrate"] }
 deadpool-postgres = "0.14.1"
 
 # Error Handling
@@ -60,32 +60,32 @@ tracing-opentelemetry = "0.32.0"
 
 # Observability
 opentelemetry = "0.31.0"
-opentelemetry-jaeger = "0.22.0"
+opentelemetry-otlp = { version = "0.31.0", features = ["grpc-tonic"] }
 prometheus = "0.14.0"
 
-# Configuration
+# Configuration  
 config = "0.15.19"
 dotenvy = "0.15"
 
 # Security
 argon2 = "0.5"
-jsonwebtoken = { version = "9.3", default-features = true }
+jsonwebtoken = { version = "10.2.0", default-features = true }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }
 
 # HTTP Client
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.12", features = ["json"] }
 
 # DateTime
 chrono = { version = "0.4.42", features = ["serde"] }
 
 # Validation
-validator = { version = "0.16", features = ["derive"] }
+validator = { version = "0.20", features = ["derive"] }
 
 # Utilities
 lazy_static = "1.4"
 
 # Event Streaming (optional)
-rdkafka = { version = "0.35", features = ["cmake-build"] }
+rdkafka = { version = "0.38.0", features = ["cmake-build"] }
 
 # Shared Crates (Internal)
 shared-domain = { path = "shared/domain" }
