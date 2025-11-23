@@ -1,210 +1,210 @@
-# name: CI Pipeline
+name: CI Pipeline
 
-# on:
-#   push:
-#     branches: [ main, develop ]
-#   pull_request:
-#     branches: [ main, develop ]
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
 
-# env:
-#   REGISTRY: ghcr.io
-#   IMAGE_PREFIX: ${{ github.repository_owner }}/luminara
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/luminara
 
-# jobs:
-#   lint-and-test:
-#     name: Lint and Test
-#     runs-on: ubuntu-latest
+jobs:
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
     
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       - name: Setup Rust
-#         uses: actions-rs/toolchain@v1
-#         with:
-#           toolchain: stable
-#           profile: minimal
-#           components: rustfmt, clippy
-#           override: true
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          components: rustfmt, clippy
+          override: true
 
-#       - name: Cache cargo registry
-#         uses: actions/cache@v3
-#         with:
-#           path: ~/.cargo/registry
-#           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-#           restore-keys: |
-#             ${{ runner.os }}-cargo-registry-
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-registry-
 
-#       - name: Cache cargo index
-#         uses: actions/cache@v3
-#         with:
-#           path: ~/.cargo/git
-#           key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
-#           restore-keys: |
-#             ${{ runner.os }}-cargo-git-
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-git-
 
-#       - name: Cache target directory
-#         uses: actions/cache@v3
-#         with:
-#           path: target
-#           key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
-#           restore-keys: |
-#             ${{ runner.os }}-target-
+      - name: Cache target directory
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-target-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-target-
 
-#       - name: Check formatting
-#         run: cargo fmt --all -- --check
+      - name: Check formatting
+        run: cargo fmt --all -- --check
 
-#       - name: Run clippy
-#         run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-#       - name: Run unit tests
-#         run: cargo test --workspace --lib
+      - name: Run unit tests
+        run: cargo test --workspace --lib
 
-#       - name: Run integration tests
-#         run: cargo test --workspace --tests
+      - name: Run integration tests
+        run: cargo test --workspace --tests
 
-#       - name: Run doc tests
-#         run: cargo test --workspace --doc
+      - name: Run doc tests
+        run: cargo test --workspace --doc
 
-#   security-scan:
-#     name: Security Scan
-#     runs-on: ubuntu-latest
-#     needs: lint-and-test
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint-and-test
     
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       - name: Run Trivy vulnerability scanner
-#         uses: aquasecurity/trivy-action@master
-#         with:
-#           scan-type: 'fs'
-#           scan-ref: '.'
-#           format: 'sarif'
-#           output: 'trivy-results.sarif'
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
 
-#       - name: Upload Trivy results to GitHub Security
-#         uses: github/codeql-action/upload-sarif@v2
-#         if: always()
-#         with:
-#           sarif_file: 'trivy-results.sarif'
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
 
-#       - name: Audit dependencies
-#         run: |
-#           cargo install cargo-audit
-#           cargo audit
+      - name: Audit dependencies
+        run: |
+          cargo install cargo-audit
+          cargo audit
 
-#   build-images:
-#     name: Build Docker Images
-#     runs-on: ubuntu-latest
-#     needs: [lint-and-test, security-scan]
-#     if: github.event_name == 'push'
+  build-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, security-scan]
+    if: github.event_name == 'push'
     
-#     strategy:
-#       matrix:
-#         service:
-#           - api-gateway
-#           - auth-service
-#           - user-service
-#           - account-service
-#           - transaction-service
-#           - kyc-service
-#           - notification-service
-#           - payment-service
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - account-service
+          - transaction-service
+          - kyc-service
+          - notification-service
+          - payment-service
     
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-#       - name: Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-#       - name: Log in to GitHub Container Registry
-#         uses: docker/login-action@v3
-#         with:
-#           registry: ${{ env.REGISTRY }}
-#           username: ${{ github.actor }}
-#           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-#       - name: Extract metadata
-#         id: meta
-#         uses: docker/metadata-action@v5
-#         with:
-#           images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
-#           tags: |
-#             type=ref,event=branch
-#             type=ref,event=pr
-#             type=sha,prefix=dev-
-#             type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=dev-
+            type=raw,value=latest,enable={{is_default_branch}}
 
-#       - name: Build and push Docker image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: .
-#           file: ./docker/${{ matrix.service }}.Dockerfile
-#           push: true
-#           tags: ${{ steps.meta.outputs.tags }}
-#           labels: ${{ steps.meta.outputs.labels }}
-#           cache-from: type=gha
-#           cache-to: type=gha,mode=max
-#           platforms: linux/amd64,linux/arm64
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./docker/${{ matrix.service }}.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
 
-#       - name: Scan image with Trivy
-#         uses: aquasecurity/trivy-action@master
-#         with:
-#           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
-#           format: 'sarif'
-#           output: 'trivy-image-results.sarif'
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
 
-#   update-manifests:
-#     name: Update Kubernetes Manifests
-#     runs-on: ubuntu-latest
-#     needs: build-images
-#     if: github.ref == 'refs/heads/main'
+  update-manifests:
+    name: Update Kubernetes Manifests
+    runs-on: ubuntu-latest
+    needs: build-images
+    if: github.ref == 'refs/heads/main'
     
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-#         with:
-#           token: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-#       - name: Update dev manifests
-#         run: |
-#           cd k8s/overlays/dev
+      - name: Update dev manifests
+        run: |
+          cd k8s/overlays/dev
           
-#           # Update image tags in kustomization.yaml
-#           services=(api-gateway auth-service user-service account-service transaction-service kyc-service notification-service payment-service)
+          # Update image tags in kustomization.yaml
+          services=(api-gateway auth-service user-service account-service transaction-service kyc-service notification-service payment-service)
           
-#           for service in "${services[@]}"; do
-#             kustomize edit set image \
-#               ${service}=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${service}:dev-${{ github.sha }}
-#           done
+          for service in "${services[@]}"; do
+            kustomize edit set image \
+              ${service}=${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${service}:dev-${{ github.sha }}
+          done
 
-#       - name: Commit and push changes
-#         run: |
-#           git config user.name "GitHub Actions Bot"
-#           git config user.email "actions@github.com"
-#           git add k8s/overlays/dev/kustomization.yaml
-#           git diff --staged --quiet || git commit -m "chore: update dev images to ${{ github.sha }}"
-#           git push
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add k8s/overlays/dev/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore: update dev images to ${{ github.sha }}"
+          git push
 
-#   notify:
-#     name: Notify
-#     runs-on: ubuntu-latest
-#     needs: [build-images, update-manifests]
-#     if: always()
+  notify:
+    name: Notify
+    runs-on: ubuntu-latest
+    needs: [build-images, update-manifests]
+    if: always()
     
-#     steps:
-#       - name: Send Slack notification
-#         uses: 8398a7/action-slack@v3
-#         if: always()
-#         with:
-#           status: ${{ job.status }}
-#           text: |
-#             CI Pipeline ${{ job.status }}
-#             Commit: ${{ github.sha }}
-#             Branch: ${{ github.ref }}
-#             Author: ${{ github.actor }}
-#           webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-#         env:
-#           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+    steps:
+      - name: Send Slack notification
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: |
+            CI Pipeline ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref }}
+            Author: ${{ github.actor }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
