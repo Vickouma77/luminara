@@ -115,9 +115,8 @@ jobs:
       # Check Cargo dependencies for known security vulnerabilities
       - name: Audit dependencies
         run: |
-          cargo install cargo-audit
-          cargo audit
-          
+          # cargo install cargo-audit
+          # cargo audit
           cargo install cargo-deny
           cargo deny check advisories
 
