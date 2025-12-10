@@ -12,7 +12,14 @@ pub struct DatabaseConfig {
 }
 
 impl DatabaseConfig {
-    // Load Configuration from Environment variable
+    /// Load configuration from environment variables.
+    ///
+    /// # Errors
+    ///
+    /// Returns `DatabaseError::ConfigError` if:
+    /// - the `DATABASE` environment variable is not set.
+    ///
+    /// For `DB_MAX_CONNECTIONS` and `DB_MIN_CONNECTION`, defaults are used if missing or invalid.
     pub fn from_env() -> Result<Self, DatabaseError> {
         Ok(Self {
             url: std::env::var("DATABASE")
