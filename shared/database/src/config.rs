@@ -1,6 +1,7 @@
 use crate::DatabaseError;
 use std::time::Duration;
 
+#[derive(Debug, Clone)]
 pub struct DatabaseConfig {
     pub url: String,
     pub max_connections: u32,
