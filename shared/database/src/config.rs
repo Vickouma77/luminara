@@ -11,7 +11,7 @@ pub struct DatabaseConfig {
 }
 
 impl DatabaseConfig {
-    /// Load Configuration from Environment variable
+    // Load Configuration from Environment variable
     pub fn from_env() -> Result<Self, DatabaseError> {
         Ok(Self {
             url: std::env::var("DATABASE")
