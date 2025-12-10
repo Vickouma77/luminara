@@ -34,5 +34,11 @@ shared-database.workspace = true
 shared-telemetry.workspace = true
 shared-events.workspace = true
 
+[[bin]]
+name = "auth-service"
+
+[lib]
+name = "auth_service"
+
 [lints]
 workspace = true
