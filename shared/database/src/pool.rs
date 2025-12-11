@@ -2,7 +2,7 @@ use crate::{DatabaseConfig, DatabaseError};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
-/// Create a new PostgreSQL connection pool.
+/// Create a new `PostgreSQL` connection pool.
 ///
 /// # Errors
 ///

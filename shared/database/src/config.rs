@@ -11,26 +11,31 @@ pub enum Environment {
 }
 
 impl Environment {
-    /// Parse environment from string
-    pub fn from_str(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
-            "production" | "prod" => Self::Production,
-            "staging" | "stage" => Self::Staging,
-            _ => Self::Development,
-        }
-    }
-
-    /// Load from APP_ENV or RUST_ENV environment variable
+    /// Load from `APP_ENV` or `RUST_ENV` environment variable
+    #[must_use]
     pub fn from_env() -> Self {
         std::env::var("APP_ENV")
             .or_else(|_| std::env::var("RUST_ENV"))
-            .map(|s| Self::from_str(&s))
+            .map(|s| s.parse().unwrap_or_default())
             .unwrap_or_default()
     }
 
     /// Check if running in production
+    #[must_use]
     pub fn is_production(&self) -> bool {
         matches!(self, Self::Production)
+    }
+}
+
+impl std::str::FromStr for Environment {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_str() {
+            "production" | "prod" => Self::Production,
+            "staging" | "stage" => Self::Staging,
+            _ => Self::Development,
+        })
     }
 }
 
@@ -65,13 +70,15 @@ pub enum SslMode {
     Disable,
 }
 
-impl SslMode {
-    pub fn from_str(s: &str) -> Self {
-        match s.to_lowercase().as_str() {
+impl std::str::FromStr for SslMode {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_str() {
             "require" | "required" => Self::Require,
-            "disable" | "disabled" => Self::Disable,
+            "disable" | "disabled" | "off" => Self::Disable,
             _ => Self::Prefer,
-        }
+        })
     }
 }
 
@@ -114,7 +121,7 @@ impl DatabaseConfig {
         let url = std::env::var("DATABASE_URL")
             .map_err(|_| DatabaseError::ConfigError("DATABASE_URL not set".into()))?;
         let ssl_mode = std::env::var("DB_SSL_MODE")
-            .map(|s| SslMode::from_str(&s))
+            .map(|s| s.parse().unwrap_or(defaults.ssl_mode))
             .unwrap_or(defaults.ssl_mode);
         Ok(Self {
             url,
@@ -154,22 +161,26 @@ impl DatabaseConfig {
     }
 
     /// Create development configuration with sensible defaults
+    #[must_use]
     pub fn development(url: String) -> Self {
         Self::for_environment(url, Environment::Development)
     }
 
     /// Create a staging configuration
+    #[must_use]
     pub fn staging(url: String) -> Self {
         Self::for_environment(url, Environment::Staging)
     }
 
     /// Create a production configuration with secure defaults
+    #[must_use]
     pub fn production(url: String) -> Self {
         Self::for_environment(url, Environment::Production)
     }
 
     /// Build the full connection URL with SSL mode appended if not already present
-    pub fn connection(&self) -> String {
+    #[must_use]
+    pub fn connection_url(&self) -> String {
         if self.url.contains("sslmode=") {
             self.url.clone()
         } else {
