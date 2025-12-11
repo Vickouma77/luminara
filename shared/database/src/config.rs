@@ -95,11 +95,11 @@ impl std::fmt::Display for SslMode {
 impl DatabaseConfig {
     /// Load configuration from environment variables with environment-aware defaults.
     ///
-    ///  #Environment Variables
+    /// # Environment Variables
     ///
     /// | Variable | Description | Required |
     /// |----------|-------------|----------|
-    /// | `DATABASE_URL` | PostgreSQL connection string | Yes |
+    /// | `DATABASE_URL` | `PostgreSQL` connection string | Yes |
     /// | `APP_ENV` or `RUST_ENV` | Environment (development/staging/production) | No (defaults to development) |
     /// | `DB_MAX_CONNECTIONS` | Maximum pool connections | No (env-based default) |
     /// | `DB_MIN_CONNECTIONS` | Minimum pool connections | No (env-based default) |
@@ -145,6 +145,7 @@ impl DatabaseConfig {
     }
 
     /// Create configuration for a specific environment with explicit URL
+    #[must_use]
     pub fn for_environment(url: String, environment: Environment) -> Self {
         let defaults = EnvironmentDefaults::for_env(environment);
 
