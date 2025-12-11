@@ -1,5 +1,7 @@
 mod config;
 mod error;
+mod pool;
 
-pub use config::*;
+pub use config::DatabaseConfig;
 pub use error::DatabaseError;
+pub use pool::create_pool;
