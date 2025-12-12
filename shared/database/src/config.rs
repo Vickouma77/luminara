@@ -240,7 +240,6 @@ fn parse_env_or<T: std::str::FromStr>(key: &str, default: T) -> T {
         .unwrap_or(default)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -248,13 +247,22 @@ mod tests {
 
     #[test]
     fn test_environment_parsing() {
-        assert_eq!(Environment::from_str("production"), Ok(Environment::Production));
+        assert_eq!(
+            Environment::from_str("production"),
+            Ok(Environment::Production)
+        );
         assert_eq!(Environment::from_str("prod"), Ok(Environment::Production));
         assert_eq!(Environment::from_str("staging"), Ok(Environment::Staging));
         assert_eq!(Environment::from_str("stage"), Ok(Environment::Staging));
-        assert_eq!(Environment::from_str("development"), Ok(Environment::Development));
+        assert_eq!(
+            Environment::from_str("development"),
+            Ok(Environment::Development)
+        );
         assert_eq!(Environment::from_str("dev"), Ok(Environment::Development));
-        assert_eq!(Environment::from_str("unknown"), Ok(Environment::Development));
+        assert_eq!(
+            Environment::from_str("unknown"),
+            Ok(Environment::Development)
+        );
     }
 
     #[test]
@@ -275,7 +283,8 @@ mod tests {
 
     #[test]
     fn test_connection_url_preserves_existing_ssl() {
-        let config = DatabaseConfig::production("postgres://db.example.com/app?sslmode=verify-full".into());
+        let config =
+            DatabaseConfig::production("postgres://db.example.com/app?sslmode=verify-full".into());
 
         assert!(!config.connection_url().contains("sslmode=require"));
 
