@@ -239,3 +239,46 @@ fn parse_env_or<T: std::str::FromStr>(key: &str, default: T) -> T {
         .and_then(|v| v.parse().ok())
         .unwrap_or(default)
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_environment_parsing() {
+        assert_eq!(Environment::from_str("production"), Ok(Environment::Production));
+        assert_eq!(Environment::from_str("prod"), Ok(Environment::Production));
+        assert_eq!(Environment::from_str("staging"), Ok(Environment::Staging));
+        assert_eq!(Environment::from_str("stage"), Ok(Environment::Staging));
+        assert_eq!(Environment::from_str("development"), Ok(Environment::Development));
+        assert_eq!(Environment::from_str("dev"), Ok(Environment::Development));
+        assert_eq!(Environment::from_str("unknown"), Ok(Environment::Development));
+    }
+
+    #[test]
+    fn test_development_defaults() {
+        let config = DatabaseConfig::development("postgres://localhost/test".into());
+
+        assert_eq!(config.max_connections, 5);
+        assert_eq!(config.min_connections, 1);
+        assert_eq!(config.ssl_mode, SslMode::Disable);
+    }
+
+    #[test]
+    fn test_production_defaults() {
+        let config = DatabaseConfig::production("postgres://db.example.com/app".into());
+
+        assert!(config.connection_url().contains("sslmode=require"));
+    }
+
+    #[test]
+    fn test_connection_url_preserves_existing_ssl() {
+        let config = DatabaseConfig::production("postgres://db.example.com/app?sslmode=verify-full".into());
+
+        assert!(!config.connection_url().contains("sslmode=require"));
+
+        assert!(config.connection_url().contains("sslmode=verify-full"));
+    }
+}
