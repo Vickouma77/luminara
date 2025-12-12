@@ -18,7 +18,8 @@ pub struct BaseRepository {
 }
 
 impl BaseRepository {
-    pub fn new(&self) -> &PgPool {
+    #[must_use]
+    pub fn pg_pool(&self) -> &PgPool {
         &self.pool
     }
 }
