@@ -14,7 +14,7 @@ impl Pagination {
     pub const DEFAULT_PER_PAGE: u32 = 20;
 
     /// Maximum items per page
-    pub const MAX_PER_PAGE: u32 = 20;
+    pub const MAX_PER_PAGE: u32 = 100;
 
     /// Create new pagination with validation values
     #[must_use]
@@ -26,6 +26,11 @@ impl Pagination {
     }
 
     /// Calculate the SQL offset value
+    #[must_use]
+    pub fn offset(&self) -> i64 {
+        i64::from(self.per_page)
+    }
+
     #[must_use]
     pub fn limit(&self) -> i64 {
         i64::from(self.per_page)
