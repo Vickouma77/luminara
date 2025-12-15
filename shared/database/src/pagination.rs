@@ -102,3 +102,48 @@ impl<T> PaginatedResult<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pagination_new_clamps_values() {
+        // Valid values pass through
+        let p = Pagination::new(3, 10);
+        assert_eq!(p.page, 3);
+        assert_eq!(p.per_page, 10);
+
+        // Page 0 becomes 1, per_page clamped to max
+        let p = Pagination::new(0, 100);
+        assert_eq!(p.page, 1);
+        assert_eq!(p.per_page, Pagination::MAX_PER_PAGE);
+    }
+
+    #[test]
+    fn test_pagination_defaults() {
+        let p = Pagination::default();
+        assert_eq!(p.page, 1);
+        assert_eq!(p.per_page, Pagination::DEFAULT_PER_PAGE);
+        assert_eq!(p.limit(), i64::from(Pagination::DEFAULT_PER_PAGE));
+    }
+
+    #[test]
+    fn test_paginated_result_metadata() {
+        let result = PaginatedResult::new(vec![1, 2, 3], Pagination::new(2, 5), 15);
+
+        assert_eq!(result.metadata.page, 2);
+        assert_eq!(result.metadata.total_pages, 3);
+        assert!(result.metadata.has_next);
+        assert!(result.metadata.has_previous);
+    }
+
+    #[test]
+    fn test_paginated_result_map() {
+        let result = PaginatedResult::new(vec![1, 2], Pagination::new(1, 10), 2);
+        let mapped = result.map(|x| x.to_string());
+
+        assert_eq!(mapped.items, vec!["1", "2"]);
+        assert_eq!(mapped.metadata.total_items, 2);
+    }
+}
