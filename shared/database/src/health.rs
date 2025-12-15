@@ -1,4 +1,5 @@
 use crate::DatabaseError;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
 /// Check database connectivity kubernetes probes
@@ -24,7 +25,7 @@ pub fn pool_stats(pool: &PgPool) -> PoolStats {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct PoolStats {
     pub size: u32,
     pub idle: usize,

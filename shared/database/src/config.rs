@@ -43,7 +43,7 @@ impl std::fmt::Display for Environment {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Development => write!(f, "development"),
-            Self::Staging => write!(f, "stage"),
+            Self::Staging => write!(f, "staging"),
             Self::Production => write!(f, "production"),
         }
     }
