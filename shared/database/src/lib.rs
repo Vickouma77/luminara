@@ -4,6 +4,7 @@ mod health;
 mod migration;
 mod pagination;
 mod pool;
+mod replicas;
 mod traits;
 mod transaction;
 
@@ -13,5 +14,6 @@ pub use health::{PoolStats, check_health, pool_stats};
 pub use migration::*;
 pub use pagination::*;
 pub use pool::{close_pool, create_pool, create_pool_with_retry};
+pub use replicas::*;
 pub use traits::*;
 pub use transaction::*;
