@@ -100,9 +100,7 @@ async fn get_applied_migration_count(pool: &PgPool) -> Result<usize, DatabaseErr
 
     match result {
         Ok((count,)) => usize::try_from(count).map_err(|_| {
-            DatabaseError::ConnectionError(sqlx::Error::Protocol(
-                "Migration count overflow".into(),
-            ))
+            DatabaseError::ConnectionError(sqlx::Error::Protocol("Migration count overflow".into()))
         }),
         Err(e) if is_table_not_found(&e) => Ok(0),
         Err(e) => Err(DatabaseError::ConnectionError(e)),
