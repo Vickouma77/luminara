@@ -94,13 +94,16 @@ pub async fn get_applied_migrations(
 ///
 /// Returns `DatabaseError::ConnectionError` if the query fails.
 async fn get_applied_migration_count(pool: &PgPool) -> Result<usize, DatabaseError> {
-    let result: Result<(i64,), _> =
-        sqlx::query_as("SELECT COUNT(*) FROM _sqlx_migrations")
-            .fetch_one(pool)
-            .await;
+    let result: Result<(i64,), _> = sqlx::query_as("SELECT COUNT(*) FROM _sqlx_migrations")
+        .fetch_one(pool)
+        .await;
 
     match result {
-        Ok((count,)) => Ok(count as usize),
+        Ok((count,)) => usize::try_from(count).map_err(|_| {
+            DatabaseError::ConnectionError(sqlx::Error::Protocol(
+                "Migration count overflow".into(),
+            ))
+        }),
         Err(e) if is_table_not_found(&e) => Ok(0),
         Err(e) => Err(DatabaseError::ConnectionError(e)),
     }
@@ -113,7 +116,7 @@ fn is_table_not_found(error: &sqlx::Error) -> bool {
     match error {
         sqlx::Error::Database(db_err) => {
             // PostgreSQL error code 42P01 = undefined_table
-            db_err.code().map_or(false, |code| code == "42P01")
+            db_err.code().is_some_and(|code| code == "42P01")
         }
         _ => false,
     }
