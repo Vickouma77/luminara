@@ -55,10 +55,8 @@ pub async fn has_pending_migrations<P: AsRef<Path>>(
         .map_err(|e| DatabaseError::MigrationError(e.to_string()))?;
 
     let applied_migrations = get_applied_migrations(pool).await?;
-    let applied_versions: std::collections::HashSet<_> = applied_migrations
-        .into_iter()
-        .map(|m| m.version)
-        .collect();
+    let applied_versions: std::collections::HashSet<_> =
+        applied_migrations.into_iter().map(|m| m.version).collect();
 
     for migration in migrator.migrations.iter() {
         if !applied_versions.contains(&migration.version) {
@@ -94,8 +92,6 @@ pub async fn get_applied_migrations(
         Err(e) => Err(DatabaseError::ConnectionError(e)),
     }
 }
-
-
 
 /// Check if the error indicates the migrations table doesn't exist.
 ///
