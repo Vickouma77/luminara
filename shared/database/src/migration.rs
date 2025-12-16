@@ -54,10 +54,19 @@ pub async fn has_pending_migrations<P: AsRef<Path>>(
         .await
         .map_err(|e| DatabaseError::MigrationError(e.to_string()))?;
 
-    let applied_count = get_applied_migration_count(pool).await?;
-    let total_migrations = migrator.migrations.len();
+    let applied_migrations = get_applied_migrations(pool).await?;
+    let applied_versions: std::collections::HashSet<_> = applied_migrations
+        .into_iter()
+        .map(|m| m.version)
+        .collect();
 
-    Ok(total_migrations > applied_count)
+    for migration in migrator.migrations.iter() {
+        if !applied_versions.contains(&migration.version) {
+            return Ok(true);
+        }
+    }
+
+    Ok(false)
 }
 
 /// Get information about applied migrations.
@@ -86,26 +95,7 @@ pub async fn get_applied_migrations(
     }
 }
 
-/// Get the count of applied migrations.
-///
-/// Returns 0 if no migrations have been applied yet (table doesn't exist).
-///
-/// # Errors
-///
-/// Returns `DatabaseError::ConnectionError` if the query fails.
-async fn get_applied_migration_count(pool: &PgPool) -> Result<usize, DatabaseError> {
-    let result: Result<(i64,), _> = sqlx::query_as("SELECT COUNT(*) FROM _sqlx_migrations")
-        .fetch_one(pool)
-        .await;
 
-    match result {
-        Ok((count,)) => usize::try_from(count).map_err(|_| {
-            DatabaseError::ConnectionError(sqlx::Error::Protocol("Migration count overflow".into()))
-        }),
-        Err(e) if is_table_not_found(&e) => Ok(0),
-        Err(e) => Err(DatabaseError::ConnectionError(e)),
-    }
-}
 
 /// Check if the error indicates the migrations table doesn't exist.
 ///
