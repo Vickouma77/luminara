@@ -3,7 +3,7 @@ use std::time::Duration;
 
 pub fn get_test_config() -> DatabaseConfig {
     let url = "postgres://luminara:luminara_dev@localhost:5432/luminara".to_string();
-    
+
     DatabaseConfig {
         url,
         max_connections: 5,
