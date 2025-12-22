@@ -1,4 +1,4 @@
-use shared_database::{create_pool, create_pool_with_retry, DatabaseConfig, Environment, SslMode};
+use shared_database::{DatabaseConfig, Environment, SslMode, create_pool, create_pool_with_retry};
 use std::time::Duration;
 
 #[tokio::test]
@@ -7,7 +7,7 @@ async fn test_database_connection() {
     // We use the credentials from docker-compose.yml
     // Note: This requires the postgres container to be running
     let url = "postgres://luminara:luminara_dev@localhost:5432/luminara".to_string();
-    
+
     let config = DatabaseConfig {
         url,
         max_connections: 5,
@@ -34,7 +34,7 @@ async fn test_database_connection() {
 #[tokio::test]
 async fn test_database_connection_with_retry() {
     let url = "postgres://luminara:luminara_dev@localhost:5432/luminara".to_string();
-    
+
     let config = DatabaseConfig {
         url,
         max_connections: 5,
@@ -61,7 +61,7 @@ async fn test_database_connection_with_retry() {
 #[tokio::test]
 async fn test_health_check() {
     let url = "postgres://luminara:luminara_dev@localhost:5432/luminara".to_string();
-    
+
     let config = DatabaseConfig {
         url,
         max_connections: 5,
@@ -82,7 +82,7 @@ async fn test_health_check() {
 #[tokio::test]
 async fn test_pool_stats() {
     let url = "postgres://luminara:luminara_dev@localhost:5432/luminara".to_string();
-    
+
     let config = DatabaseConfig {
         url,
         max_connections: 5,
