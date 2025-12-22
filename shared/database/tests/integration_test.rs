@@ -1,9 +1,9 @@
-use shared_database::{create_pool, create_pool_with_retry, DatabaseConfig, Environment, SslMode};
+use shared_database::{DatabaseConfig, Environment, SslMode, create_pool, create_pool_with_retry};
 use std::time::Duration;
 
 fn get_test_config() -> DatabaseConfig {
     let url = "postgres://luminara:luminara_dev@localhost:5432/luminara".to_string();
-    
+
     DatabaseConfig {
         url,
         max_connections: 5,
