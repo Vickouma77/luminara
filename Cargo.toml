@@ -32,11 +32,11 @@ rust-version = "1.92"
 
 [workspace.dependencies]
 # Async Runtime
-tokio = { version = "1.48.0", features = ["full"] }
+tokio = { version = "1.52.0", features = ["full"] }
 async-trait = "0.1.89"
 
 # Web Framework
-actix-web = "4.12.1"
+actix-web = "4.13.0"
 actix-cors = "0.7.1"
 actix-rt = "2.11.0"
 
@@ -49,34 +49,34 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio-rustls", "postgres", "uui
 deadpool-postgres = "0.14.1"
 
 # Error Handling
-thiserror = "2.0.17"
+thiserror = "2.0.18"
 anyhow = "1.0"
 
 # Logging & Tracing
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 tracing-actix-web = "0.7"
-tracing-opentelemetry = "0.32.0"
+tracing-opentelemetry = "0.32.1"
 
 # Observability
 opentelemetry = "0.31.0"
-opentelemetry-otlp = { version = "0.31.0", features = ["grpc-tonic"] }
+opentelemetry-otlp = { version = "0.31.1", features = ["grpc-tonic"] }
 prometheus = "0.14.0"
 
 # Configuration  
-config = "0.15.19"
+config = "0.15.22"
 dotenvy = "0.15"
 
 # Security
 argon2 = "0.5"
-jsonwebtoken = { version = "10.2.0", default-features = false, features = ["aws_lc_rs"] }
-uuid = { version = "1.19.0", features = ["serde", "v4"] }
+jsonwebtoken = { version = "10.3.0", default-features = false, features = ["aws_lc_rs"] }
+uuid = { version = "1.23.0", features = ["serde", "v4"] }
 
 # HTTP Client
-reqwest = { version = "0.13.1", features = ["json"] }
+reqwest = { version = "0.13.2", features = ["json"] }
 
 # DateTime
-chrono = { version = "0.4.42", features = ["serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
 
 # Validation
 validator = { version = "0.20", features = ["derive"] }
@@ -85,7 +85,7 @@ validator = { version = "0.20", features = ["derive"] }
 lazy_static = "1.5"
 
 # Event Streaming (optional)
-rdkafka = { version = "0.38.0", features = ["cmake-build"] }
+rdkafka = { version = "0.39.0", features = ["cmake-build"] }
 
 # Shared Crates (Internal)
 shared-domain = { path = "shared/domain" }
