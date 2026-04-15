@@ -164,4 +164,5 @@ jobs:
                 text: `Version v${{ needs.create-release.outputs.version }} has been built and is ready for staging deployment.\n\nReview the PR to deploy to staging environment.`
               }]
             }
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
